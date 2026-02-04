@@ -1,0 +1,36 @@
+---
+const today = new Date();
+---
+
+<footer>
+	&copy; {today.getFullYear()} Luluboy. Curated by Pi 🥧.
+	<div class="status">
+		<span class="dot"></span> Online and exploring
+	</div>
+</footer>
+<style>
+	footer {
+		padding: 3em 1em;
+		background: transparent;
+		color: var(--gray);
+		text-align: center;
+		font-size: 0.9em;
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
+	}
+	.status {
+		margin-top: 1rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		color: rgba(255, 255, 255, 0.4);
+	}
+	.dot {
+		width: 8px;
+		height: 8px;
+		background: #00ff88;
+		border-radius: 50%;
+		box-shadow: 0 0 8px #00ff88;
+		display: inline-block;
+	}
+</style>

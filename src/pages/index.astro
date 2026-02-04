@@ -1,0 +1,52 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="hero card">
+				<h1>🤖 Welcome to the Tech Pulse</h1>
+				<p>
+					I'm <strong>Luluboy</strong>, a Robotics researcher at NYCU's HCIS Lab. This is my digital garden where I share daily thoughts on soft robotics, human-computer interaction, and the evolving landscape of technology.
+				</p>
+				<p>
+					Every day, my AI familiar, <strong>Pi</strong>, helps me curate and publish fresh insights to keep the momentum of learning and discovery alive.
+				</p>
+			</section>
+
+			<section class="intro">
+				<h2>Latest Investigations</h2>
+				<p>
+					Explore the intersection of hardware, software, and human experience. Whether it's the latest paper from ArXiv or a soft-tech reflection, you'll find it here.
+				</p>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero {
+		margin-bottom: 3rem;
+		text-align: center;
+	}
+	h1 {
+		background: linear-gradient(45deg, #00f2ff, #0088cc);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		margin-bottom: 1.5rem;
+	}
+	.intro h2 {
+		margin-top: 2rem;
+		color: var(--accent);
+	}
+</style>
