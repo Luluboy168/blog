@@ -1,63 +1,86 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import Footer from '../components/Footer.astro';
+import { SITE_TITLE } from '../consts';
 ---
 
-<!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`About | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<BaseHead title={`About - ${SITE_TITLE}`} description="About Luluboy" />
+		<style>
+            .about-container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 4rem 1rem;
+            }
+            h1 {
+                font-size: 3.5rem;
+                background: linear-gradient(45deg, #fff, var(--accent));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 2rem;
+            }
+            p {
+                font-size: 1.1rem;
+                line-height: 1.8;
+                margin-bottom: 1.5rem;
+                color: rgba(255, 255, 255, 0.9);
+            }
+            h2 {
+                margin-top: 3rem;
+                font-size: 2rem;
+                color: var(--accent);
+            }
+            .tech-stack {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+                margin-top: 2rem;
+            }
+            .tech-item {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 1.5rem;
+                text-align: center;
+                border-radius: 16px;
+                backdrop-filter: blur(10px);
+                transition: transform 0.3s ease, border-color 0.3s ease;
+                font-weight: bold;
+                letter-spacing: 1px;
+            }
+            .tech-item:hover {
+                transform: translateY(-5px);
+                border-color: var(--accent);
+                background: rgba(255, 255, 255, 0.08);
+            }
+		</style>
 	</head>
 	<body>
 		<Header />
 		<main>
-			<section class="about-card card">
-				<h1>About Luluboy</h1>
-				<p>
-					I am a student and researcher fascinated by the intersection of hardware, software, and human experience. My journey in technology is driven by a desire to understand how we can build more intuitive and capable systems.
-				</p>
-				<h2>Research Interests</h2>
-				<ul>
-					<li><strong>Robotics:</strong> Exploring the mechanical and algorithmic foundations of autonomous systems.</li>
-					<li><strong>Software/Hardware Co-design:</strong> Optimizing the stack from silicon to application.</li>
-					<li><strong>HCI (Human-Computer Interaction):</strong> Designing interfaces that bridge the gap between human intent and machine execution.</li>
-				</ul>
-				<p>
-					This blog, <em>The Tech Pulse</em>, is my way of documenting my learning curve and sharing insights with the broader community.
-				</p>
-			</section>
+            <div class="about-container">
+                <h1>About Luluboy</h1>
+                <p>
+                    Welcome! I'm <strong>Luluboy</strong>, a technologist obsessed with the intersection of hardware and intelligence.
+                    My mission is to explore how emerging technologies reshape our interaction with the digital and physical worlds.
+                </p>
+                <p>
+                    From the intricacies of neural network architectures to the raw performance of hardware accelerators, I dive deep
+                    into the mechanics of the future. This space is where I document my findings, experiments, and visions.
+                </p>
+
+                <h2>Core Focus</h2>
+                <div class="tech-stack">
+                    <div class="tech-item">AI Acceleration</div>
+                    <div class="tech-item">Next-Gen HCI</div>
+                    <div class="tech-item">Embedded Systems</div>
+                    <div class="tech-item">Full-Stack Dev</div>
+                    <div class="tech-item">Robotics</div>
+                    <div class="tech-item">Cloud Architecture</div>
+                </div>
+            </div>
 		</main>
 		<Footer />
 	</body>
 </html>
-
-<style>
-	.about-card {
-		padding: 3rem;
-	}
-	h1 {
-		color: var(--accent);
-		margin-bottom: 2rem;
-	}
-	h2 {
-		margin-top: 2rem;
-		font-size: 1.8rem;
-	}
-	ul {
-		list-style: none;
-		padding: 0;
-	}
-	li {
-		margin-bottom: 1rem;
-		padding-left: 1.5rem;
-		position: relative;
-	}
-	li::before {
-		content: "▹";
-		position: absolute;
-		left: 0;
-		color: var(--accent);
-	}
-</style>
