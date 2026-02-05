@@ -21,6 +21,10 @@ import { SITE_TITLE } from '../consts';
           <p id="score">0</p>
         </div>
         <div class="stat-box">
+          <h3>HIGH SCORE</h3>
+          <p id="high-score">0</p>
+        </div>
+        <div class="stat-box">
           <h3>LINES</h3>
           <p id="lines">0</p>
         </div>
@@ -507,6 +511,12 @@ import { SITE_TITLE } from '../consts';
       document.getElementById('score').innerText = player.score;
       document.getElementById('lines').innerText = player.lines;
       document.getElementById('level').innerText = player.level;
+      
+      if (player.score > player.highScore) {
+        player.highScore = player.score;
+        document.getElementById('high-score').innerText = player.highScore;
+        localStorage.setItem('tetris_high_score', player.highScore);
+      }
     }
     
     function togglePause() {
@@ -579,9 +589,17 @@ import { SITE_TITLE } from '../consts';
       matrix: null,
       next: null,
       score: 0,
+      highScore: 0,
       lines: 0,
       level: 1,
     };
+    
+    // Load high score
+    const savedScore = localStorage.getItem('tetris_high_score');
+    if (savedScore) {
+      player.highScore = parseInt(savedScore, 10);
+      document.getElementById('high-score').innerText = player.highScore;
+    }
 
     document.addEventListener('keydown', event => {
       // Pause toggle with P key

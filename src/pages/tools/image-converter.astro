@@ -70,8 +70,6 @@ import { SITE_TITLE } from '../../consts';
 </html>
 
 <script>
-	import heic2any from 'heic2any';
-
 	const dropZone = document.getElementById('drop-zone');
 	const fileInput = document.getElementById('file-input');
 	const controls = document.getElementById('controls');
@@ -136,6 +134,9 @@ import { SITE_TITLE } from '../../consts';
 		loading.style.display = 'flex';
 
 		try {
+			// Dynamic import for performance
+			const heic2any = (await import('heic2any')).default;
+			
 			const blob = await heic2any({
 				blob: currentFile,
 				toType: formatSelect.value,
