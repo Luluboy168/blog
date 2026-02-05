@@ -45,11 +45,18 @@ import { SITE_TITLE } from '../consts';
           <h3>NEXT</h3>
           <canvas id="next" width="100" height="100"></canvas>
         </div>
+        
+        <div class="game-controls">
+          <button id="pause-btn" class="control-btn">PAUSE</button>
+          <button id="restart-btn" class="control-btn secondary">RESTART</button>
+        </div>
+
         <div class="controls-hint">
           <p>← → : Move</p>
           <p>↑ : Rotate</p>
           <p>↓ : Soft Drop</p>
           <p>Space : Hard Drop</p>
+          <p>P : Pause</p>
         </div>
       </div>
     </div>
@@ -60,6 +67,11 @@ import { SITE_TITLE } from '../consts';
       <button id="move-right">→</button>
       <button id="soft-drop">↓</button>
       <button id="hard-drop">⤓</button>
+    </div>
+    
+    <div class="mobile-meta-controls">
+      <button id="pause-btn-mobile" class="control-btn">PAUSE</button>
+      <button id="restart-btn-mobile" class="control-btn secondary">RESTART</button>
     </div>
   </div>
 
@@ -167,6 +179,41 @@ import { SITE_TITLE } from '../consts';
       background: #00e6b8;
     }
 
+    .game-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .control-btn {
+      padding: 10px;
+      font-size: 0.9rem;
+      background: #333;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .control-btn:hover {
+      background: #444;
+      border-color: #666;
+    }
+    
+    .control-btn.secondary {
+      background: transparent;
+      color: #888;
+      border-color: #333;
+    }
+    
+    .control-btn.secondary:hover {
+      color: #fff;
+      border-color: #666;
+    }
+
     .controls-hint {
       font-size: 0.7rem;
       color: #666;
@@ -182,14 +229,28 @@ import { SITE_TITLE } from '../consts';
       width: 100%;
       max-width: 300px;
     }
+    
+    .mobile-meta-controls {
+      display: none;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 300px;
+    }
 
-    .mobile-controls button {
+    .mobile-controls button, .mobile-meta-controls button {
       padding: 15px;
       background: #333;
       color: white;
       border: none;
       border-radius: 8px;
       font-size: 1.2rem;
+    }
+    
+    .mobile-meta-controls button {
+      font-size: 1rem;
+      padding: 12px;
     }
 
     @media (max-width: 600px) {
@@ -205,7 +266,7 @@ import { SITE_TITLE } from '../consts';
       .side-panel.right {
         display: none;
       }
-      .mobile-controls {
+      .mobile-controls, .mobile-meta-controls {
         display: grid;
       }
     }
@@ -422,9 +483,14 @@ import { SITE_TITLE } from '../consts';
     let dropInterval = 1000;
     let lastTime = 0;
     let gameRunning = false;
+    let isPaused = false;
 
     function update(time = 0) {
       if (!gameRunning) return;
+      
+      requestAnimationFrame(update);
+      
+      if (isPaused) return;
 
       const deltaTime = time - lastTime;
       lastTime = time;
@@ -435,13 +501,30 @@ import { SITE_TITLE } from '../consts';
       }
 
       draw();
-      requestAnimationFrame(update);
     }
 
     function updateScore() {
       document.getElementById('score').innerText = player.score;
       document.getElementById('lines').innerText = player.lines;
       document.getElementById('level').innerText = player.level;
+    }
+    
+    function togglePause() {
+      if (!gameRunning) return;
+      
+      isPaused = !isPaused;
+      const overlay = document.getElementById('overlay');
+      const overlayText = document.getElementById('overlay-text');
+      const startBtn = document.getElementById('start-btn');
+      
+      if (isPaused) {
+        overlay.style.display = 'flex';
+        overlayText.innerText = 'PAUSED';
+        startBtn.innerText = 'RESUME';
+      } else {
+        overlay.style.display = 'none';
+        lastTime = performance.now(); // Reset time to prevent huge delta
+      }
     }
 
     function gameOver() {
@@ -450,8 +533,19 @@ import { SITE_TITLE } from '../consts';
       document.getElementById('overlay-text').innerText = 'GAME OVER';
       document.getElementById('start-btn').innerText = 'TRY AGAIN';
     }
+    
+    function restartGame() {
+      isPaused = false;
+      startGame();
+    }
 
     function startGame() {
+      // If paused and clicking resume (handled by button logic), unpause
+      if (gameRunning && isPaused) {
+        togglePause();
+        return;
+      }
+      
       arena.forEach(row => row.fill(0));
       player.score = 0;
       player.lines = 0;
@@ -461,7 +555,9 @@ import { SITE_TITLE } from '../consts';
       playerReset();
       updateScore();
       gameRunning = true;
+      isPaused = false;
       document.getElementById('overlay').style.display = 'none';
+      lastTime = performance.now();
       requestAnimationFrame(update);
     }
 
@@ -488,7 +584,13 @@ import { SITE_TITLE } from '../consts';
     };
 
     document.addEventListener('keydown', event => {
-      if (!gameRunning) return;
+      // Pause toggle with P key
+      if (event.keyCode === 80) { // P key
+        togglePause();
+        return;
+      }
+
+      if (!gameRunning || isPaused) return;
       
       // Prevent scrolling for navigation keys
       if ([32, 37, 38, 39, 40].includes(event.keyCode)) {
@@ -518,13 +620,16 @@ import { SITE_TITLE } from '../consts';
     });
 
     document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('pause-btn').addEventListener('click', togglePause);
+    document.getElementById('restart-btn').addEventListener('click', restartGame);
 
     // Mobile controls
-    document.getElementById('move-left').addEventListener('click', () => playerMove(-1));
-    document.getElementById('move-right').addEventListener('click', () => playerMove(1));
-    document.getElementById('rotate').addEventListener('click', () => playerRotate(1));
-    document.getElementById('soft-drop').addEventListener('click', () => playerDrop());
+    document.getElementById('move-left').addEventListener('click', () => { if(!isPaused) playerMove(-1) });
+    document.getElementById('move-right').addEventListener('click', () => { if(!isPaused) playerMove(1) });
+    document.getElementById('rotate').addEventListener('click', () => { if(!isPaused) playerRotate(1) });
+    document.getElementById('soft-drop').addEventListener('click', () => { if(!isPaused) playerDrop() });
     document.getElementById('hard-drop').addEventListener('click', () => {
+      if (isPaused) return;
       while (!collide(arena, player)) {
         player.pos.y++;
       }
@@ -534,6 +639,9 @@ import { SITE_TITLE } from '../consts';
       arenaSweep();
       updateScore();
     });
+    
+    document.getElementById('pause-btn-mobile').addEventListener('click', togglePause);
+    document.getElementById('restart-btn-mobile').addEventListener('click', restartGame);
   </script>
 		</main>
 		<Footer />
