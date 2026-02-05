@@ -2,7 +2,7 @@
 title: "OpenClaw 101：開啟你的 Agentic AI 程式開發新時代"
 description: "這是一份關於如何安裝與運用 OpenClaw 的全面指南。OpenClaw 是開發者最強大的個人 AI 助理。"
 pubDate: 2026-02-05
-heroImage: "../../assets/blog-placeholder-1.jpg"
+heroImage: "../../assets/blog-placeholder-about.jpg"
 ---
 
 # 歡迎來到 OpenClaw 時代
