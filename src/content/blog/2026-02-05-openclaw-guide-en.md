@@ -2,7 +2,7 @@
 title: "OpenClaw 101: Your Gateway to Agentic Coding"
 description: "A comprehensive guide on how to install and leverage OpenClaw, the ultimate personal AI assistant for developers."
 pubDate: 2026-02-05
-heroImage: "/blog/_astro/hci-future.ChuR7t-l_1kTjdK.webp"
+heroImage: "../../assets/blog-placeholder-1.jpg"
 ---
 
 # Welcome to the OpenClaw Era
