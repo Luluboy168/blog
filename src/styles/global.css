@@ -2,13 +2,13 @@
 	--accent: #00f2ff;
 	--accent-dark: #0088cc;
 	--black: 10, 12, 18;
-	--white: 240, 245, 255;
+	--white: 249, 250, 251; /* Off-white for reduced eye strain */
 	--gray: 140, 150, 170;
 	--gray-dark: 20, 25, 35;
 	--gray-light: 40, 50, 65;
-	--glass: rgba(255, 255, 255, 0.05);
-	--glass-border: rgba(255, 255, 255, 0.1);
-	--box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+	--glass: rgba(255, 255, 255, 0.03); /* More subtle glass */
+	--glass-border: rgba(255, 255, 255, 0.08);
+	--box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.39), 0 0 0 1px rgba(0, 0, 0, 0.05); /* Layered shadow */
 }
 
 @font-face {
@@ -24,8 +24,8 @@ body {
 	background-image: 
 		radial-gradient(circle at 20% 20%, rgba(0, 242, 255, 0.05) 0%, transparent 40%),
 		radial-gradient(circle at 80% 80%, rgba(0, 136, 204, 0.05) 0%, transparent 40%);
-	color: rgb(var(--white));
-	font-size: 18px;
+	color: var(--white);
+	font-size: clamp(16px, 1.1vw, 20px); /* Fluid typography */
 	line-height: 1.6;
 	min-height: 100vh;
 }
@@ -34,7 +34,7 @@ main {
 	width: 800px;
 	max-width: calc(100% - 3em);
 	margin: auto;
-	padding: 4em 1.5em;
+	padding: clamp(2rem, 5vh, 4rem) 1.5em; /* Fluid padding */
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -44,23 +44,25 @@ h1, h2, h3, h4, h5, h6 {
 	letter-spacing: -0.02em;
 }
 
-h1 { font-size: 3.5em; }
-h2 { font-size: 2.5em; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; }
+h1 { font-size: clamp(2.5em, 5vw, 3.5em); }
+h2 { font-size: clamp(1.8em, 4vw, 2.5em); border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; }
 
 a {
 	color: var(--accent);
 	text-decoration: none;
-	transition: all 0.2s ease;
+	transition: color 0.2s ease, text-shadow 0.2s ease, transform 0.2s ease;
+	display: inline-block;
 }
 
 a:hover {
 	color: #fff;
 	text-shadow: 0 0 8px var(--accent);
+	transform: translateY(-1px);
 }
 
 .prose p {
 	margin-bottom: 1.5em;
-	color: rgba(var(--white), 0.8);
+	color: rgba(255, 255, 255, 0.85);
 }
 
 code {
@@ -97,22 +99,33 @@ hr {
 
 /* Premium Card Effect */
 .card {
-	background: var(--glass);
+	background: rgba(255, 255, 255, 0.03);
 	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
 	border: 1px solid var(--glass-border);
 	border-radius: 20px;
 	padding: 2em;
 	transition: transform 0.3s ease, box-shadow 0.3s ease;
+	will-change: transform;
 }
 
 .card:hover {
 	transform: translateY(-5px);
-	box-shadow: 0 12px 40px 0 rgba(0, 242, 255, 0.1);
+	box-shadow: 0 12px 40px 0 rgba(0, 242, 255, 0.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, ::before, ::after {
+		animation-delay: -1ms !important;
+		animation-duration: 1ms !important;
+		animation-iteration-count: 1 !important;
+		background-attachment: initial !important;
+		scroll-behavior: auto !important;
+		transition-duration: 0s !important;
+		transition-delay: 0s !important;
+	}
 }
 
 @media (max-width: 720px) {
-	body { font-size: 16px; }
 	main { padding: 2em 1em; }
-	h1 { font-size: 2.5em; }
 }
