@@ -2,7 +2,7 @@
 title: "Universal Manipulation Interface (UMI): In-The-Wild Robot Teaching"
 description: "A deep dive into Stanford's UMI framework that enables zero-shot skill transfer from human demonstrations to robots using simple handheld grippers and GoPros."
 pubDate: 2026-02-05
-heroImage: "../../assets/blog-placeholder-about.jpg"
+heroImage: "../../assets/umi-teaser.png"
 ---
 
 The dream of robotics has always been simple: teach a robot a task as easily as you would teach a human. However, the reality has been far more complex, involving expensive teleoperation rigs, tedious calibration, and fragile policies that break the moment the lighting changes.
