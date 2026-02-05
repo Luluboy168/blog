@@ -96,21 +96,34 @@ import { SITE_TITLE } from '../../consts';
 		dropZone.style.display = 'none';
 		loadingText.innerText = "Loading FFmpeg Core (this happens once)...";
 		
-		ffmpeg = new FFmpeg();
-		ffmpeg.on('log', ({ message }) => console.log(message));
-		ffmpeg.on('progress', ({ progress }) => {
-			progressFill.style.width = `${progress * 100}%`;
-			loadingText.innerText = `Converting... ${Math.round(progress * 100)}%`;
-		});
+		try {
+			// Check if we are in a secure context with SharedArrayBuffer support
+			if (!window.crossOriginIsolated) {
+				throw new Error("Security Context Error: SharedArrayBuffer is not available. Please refresh the page. If this persists, the Service Worker failed to register.");
+			}
 
-		const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-		await ffmpeg.load({
-			coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-			wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-		});
-		
-		loading.style.display = 'none';
-		dropZone.style.display = 'flex';
+			ffmpeg = new FFmpeg();
+			ffmpeg.on('log', ({ message }) => console.log(message));
+			ffmpeg.on('progress', ({ progress }) => {
+				progressFill.style.width = `${progress * 100}%`;
+				loadingText.innerText = `Converting... ${Math.round(progress * 100)}%`;
+			});
+
+			// Use explicit URLs to ensure version matching
+			const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+			await ffmpeg.load({
+				coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+				wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+			});
+			
+			loading.style.display = 'none';
+			dropZone.style.display = 'flex';
+		} catch (error) {
+			console.error("FFmpeg Load Error:", error);
+			loadingText.innerText = `Error: ${error.message}`;
+			loadingText.style.color = "#ff4444";
+			progressFill.style.backgroundColor = "#ff4444";
+		}
 	}
 
 	// Drag & Drop
@@ -145,6 +158,8 @@ import { SITE_TITLE } from '../../consts';
 		
 		// Ensure FFmpeg is loaded
 		if (!ffmpeg) await loadFFmpeg();
+		// If load failed, don't proceed
+		if (!ffmpeg) return;
 
 		currentFile = file;
 		document.getElementById('filename').innerText = file.name;
@@ -201,8 +216,6 @@ import { SITE_TITLE } from '../../consts';
 		resultArea.style.display = 'none';
 		dropZone.style.display = 'flex';
 	});
-	
-	// Preload on hover of the page area if not loaded? Nah, lazy load is better.
 </script>
 
 <style>
@@ -329,6 +342,13 @@ import { SITE_TITLE } from '../../consts';
 		align-items: center;
 		width: 100%;
 	}
+	#loading {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+	}
 	.spinner {
 		width: 40px;
 		height: 40px;
@@ -337,6 +357,7 @@ import { SITE_TITLE } from '../../consts';
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 		margin-bottom: 1rem;
+		flex-shrink: 0;
 	}
 	.progress-bar {
 		width: 100%;
