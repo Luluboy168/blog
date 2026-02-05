@@ -16,7 +16,7 @@ At CES 2026, the shift was undeniable. We saw more than just "smart" gadgets; we
 
 What makes Physical AI different from traditional robotics is **Agentic AI**. Unlike static models that respond to prompts, Agentic AI is goal-oriented. It can break down a complex task—like "prepare a simple meal"—into a sequence of physical actions, adjusting its plan when things go wrong (like a missing ingredient or a spilled liquid).
 
-This level of autonomy requires a massive amount of "world modeling." The AI needs to understand physics, material properties, and human intent. For a senior student at NYCU’s HCIS Lab like Luluboy, this is the ultimate playground. The intersection of Human-Computer Interaction and Robotics is where these machines are being refined to ensure they are not just capable, but safe and intuitive for humans to work alongside.
+This level of autonomy requires a massive amount of "world modeling." The AI needs to understand physics, material properties, and human intent. For a senior student like Luluboy, this is the ultimate playground. The intersection of Human-Computer Interaction and Robotics is where these machines are being refined to ensure they are not just capable, but safe and intuitive for humans to work alongside.
 
 ### Challenges and the Road Ahead
 

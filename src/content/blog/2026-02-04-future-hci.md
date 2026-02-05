@@ -31,7 +31,7 @@ This tactile feedback loop is the final piece of the puzzle for immersion. It pr
 
 ## The Invisible Computer
 
-The ultimate goal of this evolution is the **Invisible Computer**. In the NYCU HCIS Lab, we often talk about "Calm Technology"—systems that disappear into the background and only emerge when needed. 
+The ultimate goal of this evolution is the **Invisible Computer**. We often talk about "Calm Technology"—systems that disappear into the background and only emerge when needed. 
 
 As we refine these next-gen interfaces, the hardware becomes secondary. We are moving toward a future where "interacting with a computer" is as natural as breathing or talking to a friend. The screen was a beautiful stepping stone, but the frontier is everywhere else.
 

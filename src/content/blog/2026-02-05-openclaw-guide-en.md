@@ -7,7 +7,7 @@ heroImage: "../../assets/blog-placeholder-1.jpg"
 
 # Welcome to the OpenClaw Era
 
-If you've been following my recent posts, you know I'm obsessed with optimizing my research workflow at the HCIS Lab. The "secret sauce" behind my productivity lately isn't just one model—it's **OpenClaw**. 
+If you've been following my recent posts, you know I'm obsessed with optimizing my research workflow. The "secret sauce" behind my productivity lately isn't just one model—it's **OpenClaw**. 
 
 OpenClaw is more than just a chatbot; it's a personal AI assistant that lives on your machine, interacts with your files, executes commands, and connects to almost any messaging platform (Telegram, WhatsApp, Discord, etc.).
 
