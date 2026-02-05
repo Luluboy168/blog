@@ -1,0 +1,650 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Crossy Road | ${SITE_TITLE}`} description="A voxel-style road crossing game." />
+	</head>
+	<body>
+		<Header />
+		<main>
+      <div class="game-container">
+        <div class="game-ui">
+          <div class="score-board">
+            <div class="score-item">
+              <span class="label">SCORE</span>
+              <span id="current-score" class="value">0</span>
+            </div>
+            <div class="score-item">
+              <span class="label">BEST</span>
+              <span id="best-score" class="value">0</span>
+            </div>
+          </div>
+          
+          <div id="overlay" class="overlay">
+            <h1 id="title-text">CROSSY ROAD</h1>
+            <p id="subtitle-text">Use Arrow Keys or Swipe to Move</p>
+            <button id="start-btn">START GAME</button>
+          </div>
+        </div>
+
+        <canvas id="game-canvas"></canvas>
+
+        <div class="mobile-controls">
+          <button id="btn-left">←</button>
+          <button id="btn-forward">↑</button>
+          <button id="btn-right">→</button>
+          <button id="btn-back">↓</button>
+        </div>
+      </div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+  main {
+    padding: 0;
+    max-width: 100%;
+    overflow: hidden;
+    background: #111;
+  }
+
+  .game-container {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 60px - 80px); /* Adjust for header/footer */
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas {
+    display: block;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+  }
+
+  .game-ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .score-board {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 20px;
+    pointer-events: auto;
+  }
+
+  .score-item {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+  }
+
+  .label {
+    font-size: 0.7rem;
+    color: #888;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+
+  .value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00ffcc;
+    font-family: monospace;
+  }
+
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+
+  h1 {
+    font-size: 3rem;
+    margin: 0 0 10px 0;
+    background: linear-gradient(45deg, #00ffcc, #3399ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 5px 15px rgba(0, 255, 204, 0.3);
+  }
+
+  p {
+    color: #ccc;
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+  }
+
+  #start-btn {
+    background: #00ffcc;
+    color: #000;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
+  }
+
+  #start-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.6);
+  }
+
+  .mobile-controls {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    width: 200px;
+    height: 140px;
+    pointer-events: auto;
+    z-index: 5;
+  }
+
+  .mobile-controls button {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    touch-action: manipulation;
+  }
+
+  #btn-left { top: 40px; left: 0; }
+  #btn-right { top: 40px; right: 0; }
+  #btn-forward { top: 0; left: 70px; }
+  #btn-back { bottom: 0; left: 70px; }
+
+  @media (max-width: 768px) {
+    .mobile-controls {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  // Game Constants
+  const TILE_SIZE = 40;
+  const VIEW_WIDTH = 800;
+  const VIEW_HEIGHT = 600;
+  
+  // Colors
+  const COLORS = {
+    GRASS: '#4ade80',
+    ROAD: '#374151',
+    WATER: '#3b82f6',
+    PLAYER: '#ef4444',
+    CAR: ['#f472b6', '#c084fc', '#fbbf24'],
+    LOG: '#92400e',
+    TREE: '#166534'
+  };
+
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // UI Elements
+  const currentScoreEl = document.getElementById('current-score');
+  const bestScoreEl = document.getElementById('best-score');
+  const overlay = document.getElementById('overlay');
+  const titleText = document.getElementById('title-text');
+  const startBtn = document.getElementById('start-btn');
+
+  // Game State
+  let gameState = {
+    playing: false,
+    score: 0,
+    highScore: parseInt(localStorage.getItem('crossy_highscore') || '0'),
+    offsetY: 0, // Camera scroll
+    rows: [],
+    player: {
+      gridX: 0,
+      gridY: 0,
+      x: 0,
+      y: 0,
+      dead: false,
+      onLog: false
+    },
+    lastTime: 0
+  };
+
+  // Setup Canvas
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - 140; // Approx header/footer
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Initialize
+  bestScoreEl.innerText = gameState.highScore;
+
+  class Row {
+    constructor(y, type) {
+      this.gridY = y;
+      this.type = type; // 'grass', 'road', 'water'
+      this.obstacles = [];
+      this.speed = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+      
+      // Init obstacles
+      if (type === 'road') {
+        const numCars = Math.floor(Math.random() * 2) + 1;
+        for(let i=0; i<numCars; i++) {
+          this.obstacles.push({
+            x: Math.random() * 15 - 7, // Grid units
+            color: COLORS.CAR[Math.floor(Math.random() * COLORS.CAR.length)]
+          });
+        }
+      } else if (type === 'water') {
+        const numLogs = Math.floor(Math.random() * 3) + 2;
+        this.speed *= 0.7; // Logs slower
+        for(let i=0; i<numLogs; i++) {
+          this.obstacles.push({
+            x: Math.random() * 15 - 7,
+            width: Math.random() < 0.5 ? 2 : 3
+          });
+        }
+      } else if (type === 'grass') {
+        // Trees
+        const numTrees = Math.floor(Math.random() * 4);
+        for(let i=0; i<numTrees; i++) {
+          let tx = Math.floor(Math.random() * 14) - 7;
+          if (tx !== 0 || y !== 0) { // Don't block start
+             this.obstacles.push({ x: tx });
+          }
+        }
+      }
+    }
+
+    update(dt) {
+      if (this.type === 'grass') return;
+      
+      this.obstacles.forEach(obs => {
+        obs.x += this.speed * dt * 5; // Speed multiplier
+        
+        // Wrap around
+        if (obs.x > 10 && this.speed > 0) obs.x -= 20;
+        if (obs.x < -10 && this.speed < 0) obs.x += 20;
+      });
+    }
+  }
+
+  function initGame() {
+    gameState.score = 0;
+    gameState.offsetY = 0;
+    gameState.rows = [];
+    gameState.player = { gridX: 0, gridY: 0, x: 0, y: 0, dead: false, onLog: false };
+    gameState.playing = true;
+    
+    // Generate initial rows
+    // Start with 3 grass rows
+    for(let i=0; i<3; i++) gameState.rows.push(new Row(i, 'grass'));
+    // Generate more
+    for(let i=3; i<20; i++) addRow(i);
+
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.style.display = 'none', 300);
+    currentScoreEl.innerText = '0';
+  }
+
+  function addRow(y) {
+    const types = ['grass', 'road', 'road', 'water', 'water'];
+    // Bias towards harder types as score increases
+    const type = types[Math.floor(Math.random() * types.length)];
+    gameState.rows.push(new Row(y, type));
+  }
+
+  function getRow(y) {
+    return gameState.rows.find(r => r.gridY === y);
+  }
+
+  // Input Handling
+  function move(dx, dy) {
+    if (!gameState.playing || gameState.player.dead) return;
+
+    // Snap to nearest grid when moving (fixes floating point issues from logs)
+    const currentGridX = Math.round(gameState.player.gridX);
+    const targetX = currentGridX + dx;
+    const targetY = gameState.player.gridY + dy;
+
+    // Boundary check (left/right)
+    if (targetX < -6 || targetX > 6) return;
+    // No going excessively back
+    if (targetY < gameState.score - 5) return;
+
+    // Tree collision check
+    const targetRow = getRow(targetY);
+    if (targetRow && targetRow.type === 'grass') {
+      const tree = targetRow.obstacles.find(t => Math.abs(t.x - targetX) < 0.1);
+      if (tree) return; // Blocked
+    }
+
+    gameState.player.gridX = targetX;
+    gameState.player.gridY = targetY;
+    
+    // Update Score
+    if (targetY > gameState.score) {
+      gameState.score = targetY;
+      currentScoreEl.innerText = gameState.score;
+      // Add new rows
+      while (gameState.rows[gameState.rows.length - 1].gridY < gameState.score + 20) {
+        addRow(gameState.rows[gameState.rows.length - 1].gridY + 1);
+      }
+      // Cleanup old rows
+      if (gameState.rows.length > 50) gameState.rows.shift();
+    }
+  }
+
+  window.addEventListener('keydown', e => {
+    switch(e.key) {
+      case 'ArrowUp': move(0, 1); break;
+      case 'ArrowDown': move(0, -1); break;
+      case 'ArrowLeft': move(-1, 0); break;
+      case 'ArrowRight': move(1, 0); break;
+    }
+  });
+
+  // Touch/Button Controls
+  document.getElementById('btn-left').onclick = () => move(-1, 0);
+  document.getElementById('btn-right').onclick = () => move(1, 0);
+  document.getElementById('btn-forward').onclick = () => move(0, 1);
+  document.getElementById('btn-back').onclick = () => move(0, -1);
+
+  startBtn.addEventListener('click', () => {
+    initGame();
+  });
+
+  // Isometric Projection Helpers
+  function toIso(x, y, z) {
+    return {
+      x: (x - y) * TILE_SIZE,
+      y: (x + y) * TILE_SIZE * 0.5 - (z * TILE_SIZE)
+    };
+  }
+
+  // Main Loop
+  function loop(time) {
+    const dt = (time - gameState.lastTime) / 1000;
+    gameState.lastTime = time;
+
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt) {
+    if (!gameState.playing) return;
+
+    // Smooth camera follow
+    const targetOffset = gameState.player.gridY * TILE_SIZE * 0.5; // Adjusted for iso verticality
+    // Actually, just center the player Y
+    
+    gameState.rows.forEach(r => r.update(dt));
+
+    const p = gameState.player;
+    const currentRow = getRow(p.gridY);
+    
+    if (!currentRow) return;
+
+    // Collision Detection
+    p.onLog = false;
+    
+    if (currentRow.type === 'road') {
+      // Car collision
+      // Simple bounding box
+      const hit = currentRow.obstacles.some(car => {
+        return Math.abs(car.x - p.gridX) < 0.7;
+      });
+      if (hit) gameOver();
+    } else if (currentRow.type === 'water') {
+      // Log logic
+      let safe = false;
+      currentRow.obstacles.forEach(log => {
+        if (p.gridX >= log.x - 0.5 && p.gridX <= log.x + log.width - 0.5) {
+          safe = true;
+          // Move player with log
+          p.x = log.x + (p.gridX - Math.floor(p.gridX)); // Rough attach
+          // Actually, just drift the player gridX visual? 
+          // Better: float player gridX
+          p.gridX += currentRow.speed * dt * 5;
+        }
+      });
+      
+      if (!safe) gameOver();
+      
+      // Boundary check while floating
+      if (p.gridX < -7 || p.gridX > 7) gameOver();
+    }
+  }
+
+  function gameOver() {
+    if (gameState.player.dead) return;
+    gameState.player.dead = true;
+    gameState.playing = false;
+
+    if (gameState.score > gameState.highScore) {
+      gameState.highScore = gameState.score;
+      localStorage.setItem('crossy_highscore', gameState.highScore);
+      bestScoreEl.innerText = gameState.highScore;
+    }
+
+    titleText.innerText = "GAME OVER";
+    startBtn.innerText = "TRY AGAIN";
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.style.opacity = '1', 10);
+  }
+
+  function draw() {
+    // Clear background
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    
+    // Center camera
+    const camX = canvas.width / 2;
+    // Calculate player iso Y position to keep them somewhat centered vertically
+    // Player world Y = player.gridY
+    // Iso Y = (x+y)*0.5
+    // We want the player to be at canvas.height * 0.6
+    
+    // Camera Y offset based on player score (moves up)
+    const camY = canvas.height * 0.6 + (gameState.player.gridY * TILE_SIZE * 0.5); 
+    
+    ctx.translate(camX, camY);
+
+    // Draw Rows (render order: far to near -> high Y to low Y? No, low Y is bottom)
+    // In Iso: x+y = constant are rows.
+    // We want to draw from furthest back (highest grid Y) to closest (lowest grid Y)?
+    // Actually, screen Y increases as grid X+Y increases.
+    // Let's just draw visible rows.
+    
+    const renderRows = gameState.rows.filter(r => 
+      Math.abs(r.gridY - gameState.player.gridY) < 15
+    ).sort((a, b) => b.gridY - a.gridY); // Draw from top-of-screen (high Y) down? 
+    // Wait, standard iso: x goes right-down, y goes left-down.
+    // If we look "North", x is right, y is forward.
+    
+    // Let's redefine Iso for this game:
+    // Y is forward (North). X is Left/Right.
+    // Screen X = X * TILE_WIDTH
+    // Screen Y = -Y * TILE_HEIGHT/2
+    
+    // Using a simpler projection for "Crossy Road" style
+    // Row is horizontal.
+    // Screen X = gridX * TILE
+    // Screen Y = -gridY * TILE * 0.5
+    
+    // Let's stick to the helper function I wrote? 
+    // toIso(x, y, z): x-y, x+y. That rotates 45 deg.
+    // This means rows are diagonal. We want straight rows.
+    
+    // NEW PROJECTION: Straight rows, just squashed Y.
+    // x = gridX * TILE
+    // y = -gridY * (TILE * 0.6)
+    
+    ctx.translate(0, gameState.player.y * TILE_SIZE * 0.6); // Camera shake?
+    
+    // Reset transform for simple projection
+    ctx.restore();
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+    
+    ctx.save();
+    ctx.translate(canvas.width/2, canvas.height * 0.7);
+    const ZOOM = 1.0;
+    ctx.scale(ZOOM, ZOOM);
+    
+    // Move world down as player moves up
+    const worldYOffset = gameState.player.gridY * 40; 
+    ctx.translate(0, worldYOffset);
+
+    // Draw visible rows
+    // We need to draw from "back" (high Y) to "front" (low Y) for correct overlap?
+    // Actually in this projection (Y up is further away), High Y is top of screen.
+    // Low Y is bottom.
+    // We should draw High Y first (background) then Low Y (foreground).
+    
+    const visibleRows = gameState.rows.filter(r => 
+      r.gridY >= gameState.player.gridY - 5 && 
+      r.gridY <= gameState.player.gridY + 15
+    ).sort((a, b) => b.gridY - a.gridY); // Draw far rows first
+
+    visibleRows.forEach(row => {
+      const screenY = -row.gridY * 40;
+      
+      // Draw Base
+      ctx.fillStyle = COLORS[row.type.toUpperCase()];
+      // Draw a wide strip
+      // Perspective tweak: make rows wider at bottom? No, keep orthographic.
+      
+      // Row Block (pseudo-3d side)
+      ctx.fillStyle = darken(COLORS[row.type.toUpperCase()], 40);
+      ctx.fillRect(-400, screenY + 20, 800, 20); // Thickness
+      
+      // Top face
+      ctx.fillStyle = COLORS[row.type.toUpperCase()];
+      ctx.fillRect(-400, screenY - 20, 800, 40);
+
+      // Details
+      if (row.type === 'grass') {
+         // Trees
+         row.obstacles.forEach(tree => {
+           drawCube(tree.x * 40, screenY - 10, 30, COLORS.TREE, 40);
+         });
+      } else if (row.type === 'road') {
+         // Lane markings
+         ctx.fillStyle = '#fff';
+         for(let i=-6; i<7; i+=2) {
+            ctx.fillRect(i*40 + 10, screenY - 2, 20, 4);
+         }
+         
+         // Cars
+         row.obstacles.forEach(car => {
+           drawCube(car.x * 40, screenY - 15, 35, car.color, 25);
+         });
+      } else if (row.type === 'water') {
+         // Logs
+         row.obstacles.forEach(log => {
+           const w = log.width * 40;
+           drawCube(log.x * 40 + (w/2) - 20, screenY, 30, COLORS.LOG, 10, w);
+         });
+      }
+    });
+
+    // Draw Player
+    // Interpolate visual position
+    // For now, snap to grid
+    const px = gameState.player.gridX * 40;
+    const py = -gameState.player.gridY * 40;
+    
+    // Draw player shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(px - 15, py - 5, 30, 10);
+    
+    drawCube(px, py - 15, 30, COLORS.PLAYER, 30);
+    
+    // Beak
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillRect(px + 10, py - 20, 5, 5);
+    
+    // Eye
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(px + 5, py - 25, 5, 5);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(px + 7, py - 24, 2, 2);
+
+    ctx.restore();
+  }
+
+  function drawCube(x, y, size, color, height, widthOverride) {
+    const w = widthOverride || size;
+    const h = height;
+    
+    // Right Face
+    ctx.fillStyle = darken(color, 40);
+    ctx.fillRect(x + w/2, y - size/2, 10, size); // Fake depth side
+    
+    // Front Face (Bottom)
+    ctx.fillStyle = darken(color, 20);
+    ctx.fillRect(x - w/2, y + size/2 - 10, w, 10); // Fake depth bottom
+    
+    // Top Face
+    ctx.fillStyle = color;
+    ctx.fillRect(x - w/2, y - size/2, w, size);
+  }
+
+  function darken(color, percent) {
+    if (color.startsWith('#')) {
+        const num = parseInt(color.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) - amt;
+        const G = (num >> 8 & 0x00FF) - amt;
+        const B = (num & 0x0000FF) - amt;
+        return '#' + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+    }
+    return color;
+  }
+
+  requestAnimationFrame(loop);
+
+</script>
