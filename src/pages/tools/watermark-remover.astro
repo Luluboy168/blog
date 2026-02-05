@@ -1,0 +1,441 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_TITLE } from '../../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Watermark Remover | ${SITE_TITLE}`} description="Remove watermarks using smart inpainting." />
+    <script src="https://docs.opencv.org/4.8.0/opencv.js" async is:inline></script>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="tool-container">
+				<div class="tool-header">
+					<a href="/blog/tools" class="back-link">← Back to Tools</a>
+					<h1>Watermark Remover</h1>
+					<p>Paint over the watermark and let the algorithm erase it.</p>
+				</div>
+
+				<div class="editor-box">
+					<div id="drop-zone" class="drop-zone">
+						<div class="icon">✨</div>
+						<p>Drag & Drop Image here</p>
+						<button class="select-btn" onclick="document.getElementById('file-input').click()">Or Select File</button>
+						<input type="file" id="file-input" accept="image/*" hidden>
+					</div>
+
+          <div id="editor-ui" style="display: none;">
+            <div class="canvas-wrapper">
+              <canvas id="main-canvas"></canvas>
+              <canvas id="mask-canvas"></canvas>
+            </div>
+
+            <div class="controls-bar">
+              <div class="brush-controls">
+                <label>Brush Size:</label>
+                <input type="range" id="brush-size" min="5" max="50" value="20">
+                <div id="brush-preview" style="width: 20px; height: 20px;"></div>
+              </div>
+              
+              <div class="action-buttons">
+                <button id="clear-mask-btn" class="secondary-btn">Clear Mask</button>
+                <button id="remove-btn" class="primary-btn">Magic Remove</button>
+              </div>
+            </div>
+
+            <div class="download-section" style="display: none;" id="download-section">
+              <p>Success!</p>
+              <a id="download-link" class="download-btn" download>Download Result</a>
+              <button id="reset-btn" class="text-btn">Start Over</button>
+            </div>
+          </div>
+          
+          <div id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p id="loading-text">Loading OpenCV...</p>
+          </div>
+				</div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+  let cvReady = false;
+  // OpenCV load check
+  const checkCV = setInterval(() => {
+    // @ts-ignore
+    if (typeof cv !== 'undefined' && cv.Mat) {
+      cvReady = true;
+      clearInterval(checkCV);
+      console.log('OpenCV Loaded');
+    }
+  }, 100);
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const editorUI = document.getElementById('editor-ui');
+  const mainCanvas = document.getElementById('main-canvas');
+  const maskCanvas = document.getElementById('mask-canvas');
+  const ctx = mainCanvas.getContext('2d');
+  const maskCtx = maskCanvas.getContext('2d');
+  const removeBtn = document.getElementById('remove-btn');
+  const brushSizeInput = document.getElementById('brush-size');
+  const brushPreview = document.getElementById('brush-preview');
+  const clearMaskBtn = document.getElementById('clear-mask-btn');
+  const downloadSection = document.getElementById('download-section');
+  const downloadLink = document.getElementById('download-link');
+  const resetBtn = document.getElementById('reset-btn');
+  const loading = document.getElementById('loading');
+
+  let isDrawing = false;
+  let img = new Image();
+  let originalFile = null;
+
+  // Drag & Drop
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!cvReady) {
+      alert('OpenCV is still loading. Please wait a moment and try again.');
+      return;
+    }
+    originalFile = file;
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    img.onload = () => {
+      initCanvas();
+      dropZone.style.display = 'none';
+      editorUI.style.display = 'flex';
+    };
+  }
+
+  function initCanvas() {
+    // Resize to fit screen if needed
+    const maxWidth = 800;
+    const scale = Math.min(1, maxWidth / img.width);
+    const w = img.width * scale;
+    const h = img.height * scale;
+
+    mainCanvas.width = w;
+    mainCanvas.height = h;
+    maskCanvas.width = w;
+    maskCanvas.height = h;
+
+    ctx.drawImage(img, 0, 0, w, h);
+    
+    // Init mask
+    maskCtx.fillStyle = 'rgba(0,0,0,0)';
+    maskCtx.clearRect(0, 0, w, h);
+    maskCtx.lineCap = 'round';
+    maskCtx.lineJoin = 'round';
+  }
+
+  // Drawing Logic
+  maskCanvas.addEventListener('mousedown', startDraw);
+  maskCanvas.addEventListener('mousemove', draw);
+  maskCanvas.addEventListener('mouseup', stopDraw);
+  maskCanvas.addEventListener('mouseout', stopDraw);
+  
+  // Touch support
+  maskCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); });
+  maskCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+  maskCanvas.addEventListener('touchend', stopDraw);
+
+  function startDraw(e) {
+    isDrawing = true;
+    const rect = maskCanvas.getBoundingClientRect();
+    const x = (e.clientX || e.pageX) - rect.left;
+    const y = (e.clientY || e.pageY) - rect.top;
+    
+    maskCtx.beginPath();
+    maskCtx.moveTo(x, y);
+    // Draw a dot
+    maskCtx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+    maskCtx.beginPath();
+    maskCtx.arc(x, y, parseInt(brushSizeInput.value) / 2, 0, Math.PI * 2);
+    maskCtx.fill();
+    maskCtx.beginPath(); // Reset path for line
+    maskCtx.moveTo(x, y);
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
+    const rect = maskCanvas.getBoundingClientRect();
+    const x = (e.clientX || e.pageX) - rect.left;
+    const y = (e.clientY || e.pageY) - rect.top;
+
+    maskCtx.lineWidth = parseInt(brushSizeInput.value);
+    maskCtx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    maskCtx.lineTo(x, y);
+    maskCtx.stroke();
+  }
+
+  function stopDraw() {
+    isDrawing = false;
+  }
+
+  // Controls
+  brushSizeInput.addEventListener('input', (e) => {
+    brushPreview.style.width = e.target.value + 'px';
+    brushPreview.style.height = e.target.value + 'px';
+  });
+
+  clearMaskBtn.addEventListener('click', () => {
+    maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+    ctx.drawImage(img, 0, 0, mainCanvas.width, mainCanvas.height); // Restore original
+    downloadSection.style.display = 'none';
+  });
+
+  removeBtn.addEventListener('click', () => {
+    loading.style.display = 'flex';
+    editorUI.style.opacity = '0.5';
+    
+    // Give UI time to update
+    setTimeout(processInpaint, 100);
+  });
+
+  function processInpaint() {
+    try {
+      // @ts-ignore
+      let src = cv.imread(mainCanvas);
+      // @ts-ignore
+      let mask = cv.imread(maskCanvas);
+      
+      // Convert mask to grayscale single channel
+      // @ts-ignore
+      let maskGray = new cv.Mat();
+      // @ts-ignore
+      cv.cvtColor(mask, maskGray, cv.COLOR_RGBA2GRAY, 0);
+      // Threshold to get binary mask
+      // @ts-ignore
+      cv.threshold(maskGray, maskGray, 10, 255, cv.THRESH_BINARY);
+
+      // Inpaint
+      // @ts-ignore
+      let dst = new cv.Mat();
+      // @ts-ignore
+      cv.inpaint(src, maskGray, dst, 3, cv.INPAINT_TELEA);
+
+      // Show result
+      // @ts-ignore
+      cv.imshow('main-canvas', dst);
+
+      // Cleanup
+      src.delete();
+      mask.delete();
+      maskGray.delete();
+      dst.delete();
+      
+      // Update UI
+      loading.style.display = 'none';
+      editorUI.style.opacity = '1';
+      maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height); // Clear mask visual
+      
+      // Prepare download
+      downloadSection.style.display = 'flex';
+      downloadLink.href = mainCanvas.toDataURL();
+      downloadLink.download = 'clean-' + originalFile.name;
+
+    } catch (e) {
+      console.error(e);
+      alert('Error during processing: ' + e);
+      loading.style.display = 'none';
+      editorUI.style.opacity = '1';
+    }
+  }
+
+  resetBtn.addEventListener('click', () => {
+    editorUI.style.display = 'none';
+    dropZone.style.display = 'flex';
+    img = new Image();
+    downloadSection.style.display = 'none';
+  });
+
+</script>
+
+<style>
+  .tool-container {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+	.tool-header {
+		text-align: center;
+		margin-bottom: 3rem;
+	}
+  .back-link {
+		color: #888;
+		text-decoration: none;
+		font-size: 0.9rem;
+		margin-bottom: 1rem;
+		display: inline-block;
+	}
+  .tool-header h1 {
+		font-size: 2.5rem;
+		margin: 0.5rem 0;
+	}
+
+  .editor-box {
+    background: #1a1a1a;
+		border: 1px solid #333;
+		border-radius: 12px;
+		padding: 2rem;
+		min-height: 500px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .drop-zone {
+		border: 2px dashed #444;
+		border-radius: 12px;
+		padding: 3rem;
+		text-align: center;
+		width: 100%;
+    cursor: pointer;
+	}
+  .drop-zone.dragover {
+		border-color: #00ffcc;
+		background: rgba(0, 255, 204, 0.05);
+	}
+  .select-btn {
+		background: #00ffcc;
+		color: #000;
+		border: none;
+		padding: 10px 20px;
+		border-radius: 6px;
+		cursor: pointer;
+		font-weight: bold;
+    margin-top: 1rem;
+	}
+
+  .canvas-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+    border: 1px solid #444;
+    line-height: 0;
+  }
+  
+  canvas {
+    max-width: 100%;
+  }
+
+  #mask-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: crosshair;
+  }
+
+  .controls-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    background: #222;
+    padding: 15px;
+    border-radius: 8px;
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .brush-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  #brush-preview {
+    background: rgba(255, 0, 0, 0.5);
+    border-radius: 50%;
+    border: 1px solid #fff;
+  }
+
+  .primary-btn {
+    background: linear-gradient(45deg, #00ffcc, #3399ff);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .secondary-btn {
+    background: #444;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .download-section {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-top: 20px;
+    background: rgba(0, 255, 204, 0.1);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #00ffcc;
+  }
+  .download-btn {
+    background: #00ffcc;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .text-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  #loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .spinner {
+		width: 40px;
+		height: 40px;
+		border: 4px solid #333;
+		border-top: 4px solid #00ffcc;
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+		margin-bottom: 1rem;
+	}
+	@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
