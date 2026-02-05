@@ -489,6 +489,12 @@ import { SITE_TITLE } from '../consts';
 
     document.addEventListener('keydown', event => {
       if (!gameRunning) return;
+      
+      // Prevent scrolling for navigation keys
+      if ([32, 37, 38, 39, 40].includes(event.keyCode)) {
+        event.preventDefault();
+      }
+
       if (event.keyCode === 37) {
         playerMove(-1);
       } else if (event.keyCode === 39) {
