@@ -48,6 +48,17 @@ const posts = (await getCollection('blog')).sort(
 			.post-content {
 				padding: 2rem;
 			}
+			@media (max-width: 720px) {
+				.post-content {
+					padding: 1.2rem;
+				}
+				.title {
+					font-size: 1.4rem;
+				}
+				.post-image {
+					height: 180px;
+				}
+			}
 			.title {
 				font-size: 1.8rem;
 				color: #fff;

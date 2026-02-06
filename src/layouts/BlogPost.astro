@@ -25,6 +25,16 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 				box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 				margin-bottom: 2rem;
 				display: block;
+				object-fit: cover;
+			}
+			@media (max-width: 720px) {
+				.hero-image {
+					border-radius: 12px;
+					margin-bottom: 1.5rem;
+				}
+				.title h1 {
+					font-size: 2.2rem;
+				}
 			}
 			.title {
 				margin-bottom: 3rem;

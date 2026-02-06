@@ -127,5 +127,29 @@ hr {
 }
 
 @media (max-width: 720px) {
-	main { padding: 2em 1em; }
+	main { 
+		padding: 1.5rem 1rem;
+		max-width: 100%;
+		width: 100%;
+	}
+	h1 { font-size: 2.2rem; }
+	h2 { font-size: 1.6rem; }
+	.card { padding: 1.5rem; }
+}
+
+/* Ensure images don't overflow and look good on mobile */
+img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 12px;
+}
+
+/* Improve accessibility on touch devices */
+@media (hover: none) {
+	a, button {
+		min-height: 44px;
+		min-width: 44px;
+		display: inline-flex;
+		align-items: center;
+	}
 }
