@@ -41,7 +41,7 @@ In the RSS 2024 paper, the team demonstrated UMI's versatility across several ch
 
 ### Why It Matters for Robotics Research
 
-For researchers (like those in the HCIS Lab), UMI represents a shift toward **scalable data collection**. It lowers the barrier to entry for high-quality imitation learning. You don't need a lab full of robots to collect data; you just need a GoPro and a 3D printer.
+For researchers, UMI represents a shift toward **scalable data collection**. It lowers the barrier to entry for high-quality imitation learning. You don't need a lab full of robots to collect data; you just need a GoPro and a 3D printer.
 
 The project is fully open-source, including hardware designs, SLAM pipelines, and training code. For anyone interested in the future of Physical AI, UMI is a must-study framework.
 

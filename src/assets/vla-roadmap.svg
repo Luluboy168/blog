@@ -1,0 +1,35 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f8f9fa" />
+  <text x="400" y="40" font-family="Arial" font-size="24" text-anchor="middle" font-weight="bold">VLA Roadmap 2025-2026</text>
+  
+  <!-- Timeline -->
+  <line x1="50" y1="100" x2="750" y2="100" stroke="#333" stroke-width="3" />
+  
+  <!-- 2025 Early -->
+  <circle cx="150" cy="100" r="8" fill="#007bff" />
+  <text x="150" y="80" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Early 2025</text>
+  <g font-family="Arial" font-size="14" fill="#333">
+    <text x="150" y="130" text-anchor="middle">Pi0 Foundation</text>
+    <text x="150" y="150" text-anchor="middle">OpenVLA Updates</text>
+    <text x="150" y="170" text-anchor="middle">Gemini Robotics v1</text>
+    <text x="150" y="190" text-anchor="middle">Cross-Embodiment</text>
+  </g>
+  
+  <!-- 2025 Late -->
+  <circle cx="400" cy="100" r="8" fill="#28a745" />
+  <text x="400" y="80" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Late 2025</text>
+  <g font-family="Arial" font-size="14" fill="#333">
+    <text x="400" y="130" text-anchor="middle">RFM-1 In-context</text>
+    <text x="400" y="150" text-anchor="middle">Pi0 v0.5</text>
+    <text x="400" y="170" text-anchor="middle">VLABench Release</text>
+  </g>
+  
+  <!-- 2026 -->
+  <circle cx="650" cy="100" r="8" fill="#dc3545" />
+  <text x="650" y="80" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">2026</text>
+  <g font-family="Arial" font-size="14" fill="#333">
+    <text x="650" y="130" text-anchor="middle">Pi0 v0.6 / Gemini v2</text>
+    <text x="650" y="150" text-anchor="middle">Domestic Autonomy</text>
+    <text x="650" y="170" text-anchor="middle">Agile Assembly</text>
+  </g>
+</svg>

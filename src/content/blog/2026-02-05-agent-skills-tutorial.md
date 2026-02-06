@@ -7,7 +7,7 @@ heroImage: "../../assets/agent-skills-header.png"
 
 # Master Your AI: The Power of Custom Skills
 
-In my [previous post](/blog/2026-02-05-openclaw-guide-en), I introduced **OpenClaw** as the ultimate gateway for agentic coding. Today, we're diving deeper into its most powerful feature: **Agent Skills**.
+In my [previous post](/blog/posts/2026-02-05-openclaw-guide-en/), I introduced **OpenClaw** as the ultimate gateway for agentic coding. Today, we're diving deeper into its most powerful feature: **Agent Skills**.
 
 If OpenClaw is the "brain," Skills are the "specialized training" that allow it to handle complex, domain-specific tasks with deterministic reliability. Whether it's rotating PDFs, querying a custom database, or generating blog headers like the one above, Skills are how you level up your AI.
 
