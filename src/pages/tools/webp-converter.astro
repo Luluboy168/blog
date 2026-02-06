@@ -1,0 +1,348 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_TITLE } from '../../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`WebP Converter | ${SITE_TITLE}`} description="Convert WebP images to JPG or PNG in your browser." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="tool-container">
+				<div class="tool-header">
+					<a href="/blog/tools" class="back-link">← Back to Tools</a>
+					<h1>WebP Converter</h1>
+					<p>Convert WebP to JPG/PNG instantly. 100% Client-side privacy.</p>
+				</div>
+
+				<div class="converter-box">
+					<div id="drop-zone" class="drop-zone">
+						<div class="icon">🖼️</div>
+						<p>Drag & Drop WebP file here</p>
+						<button class="select-btn" onclick="document.getElementById('file-input').click()">Or Select File</button>
+						<input type="file" id="file-input" accept="image/webp" hidden>
+					</div>
+
+					<div class="controls" id="controls" style="display: none;">
+						<div class="file-info">
+							<span id="filename">image.webp</span>
+							<span id="filesize">0 MB</span>
+						</div>
+						
+						<div class="options">
+							<label>Output Format:</label>
+							<select id="format-select">
+								<option value="image/jpeg">JPG</option>
+								<option value="image/png">PNG</option>
+							</select>
+							
+							<label>Quality:</label>
+							<div class="quality-control">
+								<input type="range" id="quality" min="0.1" max="1" step="0.1" value="0.9">
+								<span id="quality-val">90%</span>
+							</div>
+						</div>
+
+						<button id="convert-btn" class="action-btn">Convert Now</button>
+					</div>
+
+					<div id="result-area" style="display: none;">
+						<h3>Result</h3>
+						<div class="preview-container">
+							<img id="preview-img" src="" alt="Converted Image">
+						</div>
+						<a id="download-link" class="download-btn" download>Download Image</a>
+						<button id="reset-btn" class="text-btn">Convert Another</button>
+					</div>
+
+					<div id="loading" style="display: none;">
+						<div class="spinner"></div>
+						<p>Processing image...</p>
+					</div>
+				</div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+	const dropZone = document.getElementById('drop-zone');
+	const fileInput = document.getElementById('file-input');
+	const controls = document.getElementById('controls');
+	const convertBtn = document.getElementById('convert-btn');
+	const resultArea = document.getElementById('result-area');
+	const loading = document.getElementById('loading');
+	const formatSelect = document.getElementById('format-select') as HTMLSelectElement;
+	const qualityInput = document.getElementById('quality') as HTMLInputElement;
+	const qualityVal = document.getElementById('quality-val');
+	const previewImg = document.getElementById('preview-img') as HTMLImageElement;
+	const downloadLink = document.getElementById('download-link') as HTMLAnchorElement;
+	const resetBtn = document.getElementById('reset-btn');
+
+	let currentFile: File | null = null;
+
+	// Drag & Drop
+	dropZone?.addEventListener('dragover', (e) => {
+		e.preventDefault();
+		dropZone.classList.add('dragover');
+	});
+
+	dropZone?.addEventListener('dragleave', () => {
+		dropZone.classList.remove('dragover');
+	});
+
+	dropZone?.addEventListener('drop', (e) => {
+		e.preventDefault();
+		dropZone.classList.remove('dragover');
+		if (e.dataTransfer?.files.length) {
+			handleFile(e.dataTransfer.files[0]);
+		}
+	});
+
+	fileInput?.addEventListener('change', (e) => {
+		const target = e.target as HTMLInputElement;
+		if (target.files?.length) {
+			handleFile(target.files[0]);
+		}
+	});
+
+	function handleFile(file: File) {
+		if (!file.type.includes('webp') && !file.name.toLowerCase().endsWith('.webp')) {
+			alert('Please select a .webp file');
+			return;
+		}
+		currentFile = file;
+		const filenameElem = document.getElementById('filename');
+		const filesizeElem = document.getElementById('filesize');
+		if (filenameElem) filenameElem.innerText = file.name;
+		if (filesizeElem) filesizeElem.innerText = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+		
+		if (dropZone) dropZone.style.display = 'none';
+		if (controls) controls.style.display = 'flex';
+		if (resultArea) resultArea.style.display = 'none';
+	}
+
+	qualityInput?.addEventListener('input', (e) => {
+		const target = e.target as HTMLInputElement;
+		if (qualityVal) qualityVal.innerText = Math.round(parseFloat(target.value) * 100) + '%';
+	});
+
+	convertBtn?.addEventListener('click', async () => {
+		if (!currentFile) return;
+
+		if (controls) controls.style.display = 'none';
+		if (loading) loading.style.display = 'flex';
+
+		try {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				const img = new Image();
+				img.onload = () => {
+					const canvas = document.createElement('canvas');
+					canvas.width = img.width;
+					canvas.height = img.height;
+					const ctx = canvas.getContext('2d');
+					if (!ctx) throw new Error('Could not get canvas context');
+					
+					ctx.drawImage(img, 0, 0);
+					
+					const format = formatSelect.value;
+					const quality = parseFloat(qualityInput.value);
+					
+					canvas.toBlob((blob) => {
+						if (!blob) throw new Error('Canvas toBlob failed');
+						
+						const url = URL.createObjectURL(blob);
+						previewImg.src = url;
+						
+						const ext = format === 'image/png' ? 'png' : 'jpg';
+						downloadLink.href = url;
+						downloadLink.download = currentFile!.name.replace(/\.webp$/i, '') + '.' + ext;
+
+						if (loading) loading.style.display = 'none';
+						if (resultArea) resultArea.style.display = 'flex';
+					}, format, quality);
+				};
+				img.src = e.target?.result as string;
+			};
+			reader.readAsDataURL(currentFile);
+		} catch (error) {
+			console.error(error);
+			alert('Conversion failed. Please try again.');
+			if (loading) loading.style.display = 'none';
+			if (controls) controls.style.display = 'flex';
+		}
+	});
+
+	resetBtn?.addEventListener('click', () => {
+		currentFile = null;
+		if (fileInput instanceof HTMLInputElement) fileInput.value = '';
+		if (resultArea) resultArea.style.display = 'none';
+		if (dropZone) dropZone.style.display = 'flex';
+	});
+</script>
+
+<style>
+	.tool-container {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+	.tool-header {
+		text-align: center;
+		margin-bottom: 3rem;
+	}
+	.back-link {
+		color: #888;
+		text-decoration: none;
+		font-size: 0.9rem;
+		margin-bottom: 1rem;
+		display: inline-block;
+	}
+	.back-link:hover {
+		color: #fff;
+	}
+	.tool-header h1 {
+		font-size: 2.5rem;
+		margin: 0.5rem 0;
+		background: linear-gradient(45deg, #00ffcc, #3399ff);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+	.converter-box {
+		background: #1a1a1a;
+		border: 1px solid #333;
+		border-radius: 12px;
+		padding: 3rem;
+		min-height: 400px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	.drop-zone {
+		border: 2px dashed #444;
+		border-radius: 12px;
+		padding: 3rem;
+		text-align: center;
+		width: 100%;
+		transition: all 0.2s;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+	}
+	.drop-zone.dragover {
+		border-color: #00ffcc;
+		background: rgba(0, 255, 204, 0.05);
+	}
+	.select-btn {
+		background: #00ffcc;
+		color: #000;
+		border: none;
+		padding: 10px 20px;
+		border-radius: 6px;
+		cursor: pointer;
+		font-weight: bold;
+		font-size: 1rem;
+	}
+	.controls {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+	.file-info {
+		text-align: center;
+		background: #222;
+		padding: 1rem;
+		border-radius: 8px;
+	}
+	.options {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 1.5rem;
+		align-items: center;
+		max-width: 500px;
+		margin: 0 auto;
+	}
+	.quality-control {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+	.quality-control input {
+		flex: 1;
+	}
+	.action-btn {
+		background: linear-gradient(45deg, #00ffcc, #3399ff);
+		border: none;
+		padding: 15px;
+		border-radius: 8px;
+		color: #000;
+		font-weight: bold;
+		font-size: 1.1rem;
+		cursor: pointer;
+		width: 100%;
+		max-width: 300px;
+		margin: 0 auto;
+	}
+	.download-btn {
+		background: #00ffcc;
+		color: #000;
+		padding: 12px 24px;
+		text-decoration: none;
+		border-radius: 6px;
+		font-weight: bold;
+		display: inline-block;
+		margin: 1rem 0;
+	}
+	.text-btn {
+		background: none;
+		border: none;
+		color: #888;
+		cursor: pointer;
+		text-decoration: underline;
+	}
+	.preview-container img {
+		max-width: 100%;
+		max-height: 300px;
+		border-radius: 8px;
+		border: 1px solid #444;
+	}
+	#result-area {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+	}
+	.spinner {
+		width: 40px;
+		height: 40px;
+		border: 4px solid #333;
+		border-top: 4px solid #00ffcc;
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+		margin-bottom: 1rem;
+	}
+	@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+	
+	select, input[type="range"] {
+		accent-color: #00ffcc;
+	}
+	
+	select {
+		background: #222;
+		color: #fff;
+		border: 1px solid #444;
+		padding: 8px;
+		border-radius: 4px;
+	}
+</style>
