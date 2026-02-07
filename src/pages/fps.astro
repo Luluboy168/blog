@@ -186,8 +186,8 @@ import { SITE_TITLE } from '../consts';
 		<Footer />
 
     <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-      import { PointerLockControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/PointerLockControls.js';
+      import * as THREE from 'https://esm.sh/three@0.160.0';
+      import { PointerLockControls } from 'https://esm.sh/three@0.160.0/examples/jsm/controls/PointerLockControls.js';
 
       let scene, camera, renderer, controls;
       let raycaster, flash;
@@ -207,7 +207,9 @@ import { SITE_TITLE } from '../consts';
       let prevTime = performance.now();
 
       function init() {
-        scene = new THREE.Scene();
+        console.log('Initializing Cyber Strike...');
+        try {
+          scene = new THREE.Scene();
         scene.background = new THREE.Color(0x050505);
         scene.fog = new THREE.Fog(0x050505, 0, 100);
 
@@ -266,7 +268,12 @@ import { SITE_TITLE } from '../consts';
         window.addEventListener('resize', onWindowResize);
 
         animate();
+        console.log('Game initialized successfully.');
+      } catch (error) {
+        console.error('Initialization error:', error);
+        document.getElementById('subtitle').innerText = 'System Error: Check Console';
       }
+    }
 
       function createWorld() {
         // Floor
