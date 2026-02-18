@@ -1,0 +1,503 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_TITLE } from '../../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`PID Controller Simulator | ${SITE_TITLE}`} description="Interactive PID Controller Simulator for Drone Altitude." />
+        <style>
+            /* Custom Scrollbar for the sliders panel if needed */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #1a1a1a;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #333;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+        </style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="tool-container">
+				<div class="tool-header">
+					<a href="/blog/tools" class="back-link">← Back to Tools</a>
+					<h1>PID Controller Simulator</h1>
+					<p>Tune a drone's altitude controller in real-time.</p>
+				</div>
+
+                <div class="sim-layout">
+                    <!-- Controls Panel -->
+                    <div class="glass-panel controls-panel">
+                        <h2>Parameters</h2>
+                        
+                        <div class="control-group">
+                            <label for="kp">Proportional (Kp): <span id="val-kp">0.0</span></label>
+                            <input type="range" id="kp" min="0" max="20" step="0.1" value="5.0">
+                        </div>
+
+                        <div class="control-group">
+                            <label for="ki">Integral (Ki): <span id="val-ki">0.0</span></label>
+                            <input type="range" id="ki" min="0" max="5" step="0.01" value="0.0">
+                        </div>
+
+                        <div class="control-group">
+                            <label for="kd">Derivative (Kd): <span id="val-kd">0.0</span></label>
+                            <input type="range" id="kd" min="0" max="100" step="0.1" value="10.0">
+                        </div>
+
+                        <div class="control-group">
+                            <label for="target">Target Altitude: <span id="val-target">50</span>m</label>
+                            <input type="range" id="target" min="0" max="100" step="1" value="50">
+                        </div>
+
+                         <div class="buttons">
+                            <button id="reset-btn" class="action-btn">Reset Simulation</button>
+                             <div class="disturbance-btn-group">
+                                <button id="wind-btn" class="secondary-btn">Add Wind Gust</button>
+                             </div>
+                        </div>
+                        
+                        <div class="stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Error</span>
+                                <span class="stat-value" id="stat-error">0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Thrust</span>
+                                <span class="stat-value" id="stat-thrust">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visualization Panel -->
+                    <div class="glass-panel vis-panel">
+                        <div class="canvas-container">
+                            <canvas id="sim-canvas"></canvas>
+                        </div>
+                        <div class="graph-container">
+                            <canvas id="graph-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+    // Physics Constants
+    const GRAVITY = 9.81;
+    const MASS = 1.0; // kg
+    const DT = 0.016; // 60fps ~ 16ms
+    const MAX_THRUST = 30.0; // Newtons
+    
+    // State
+    let state = {
+        y: 0.0, // Altitude (m)
+        v: 0.0, // Velocity (m/s)
+        time: 0.0
+    };
+
+    // PID State
+    let pid = {
+        integral: 0.0,
+        prevError: 0.0
+    };
+
+    // Parameters
+    let params = {
+        kp: 5.0,
+        ki: 0.0,
+        kd: 10.0,
+        target: 50.0
+    };
+
+    // History for Graph
+    const MAX_HISTORY = 300;
+    let history = [];
+
+    // Elements
+    const canvas = document.getElementById('sim-canvas');
+    const graphCanvas = document.getElementById('graph-canvas');
+    const ctx = canvas.getContext('2d');
+    const graphCtx = graphCanvas.getContext('2d');
+    
+    // Resize handling
+    function resize() {
+        const visPanel = document.querySelector('.vis-panel');
+        canvas.width = visPanel.clientWidth * 0.4; // 40% for visual
+        canvas.height = 400;
+        graphCanvas.width = visPanel.clientWidth * 0.55; // 55% for graph
+        graphCanvas.height = 400;
+    }
+    window.addEventListener('resize', resize);
+    setTimeout(resize, 100); // Initial resize
+
+    // Input Handling
+    function setupInputs() {
+        ['kp', 'ki', 'kd', 'target'].forEach(id => {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(`val-${id}`);
+            
+            el.addEventListener('input', (e) => {
+                params[id] = parseFloat(e.target.value);
+                valEl.innerText = params[id].toFixed(id === 'ki' ? 2 : 1);
+            });
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            state = { y: 0.0, v: 0.0, time: 0.0 };
+            pid = { integral: 0.0, prevError: 0.0 };
+            history = [];
+        });
+
+        document.getElementById('wind-btn').addEventListener('click', () => {
+            state.v -= 5.0; // Sudden downward velocity
+        });
+    }
+
+    function updatePhysics() {
+        const error = params.target - state.y;
+        
+        // PID Calculation
+        const p = params.kp * error;
+        pid.integral += error * DT;
+        // Anti-windup clamping for integral
+        pid.integral = Math.max(-20, Math.min(20, pid.integral)); 
+        
+        const i = params.ki * pid.integral;
+        const d = params.kd * (error - pid.prevError) / DT;
+        
+        pid.prevError = error;
+
+        let output = p + i + d;
+        
+        // Feedforward (Hover thrust to counteract gravity)
+        const hoverThrust = MASS * GRAVITY;
+        let thrust = hoverThrust + output;
+        
+        // Clamp thrust
+        thrust = Math.max(0, Math.min(MAX_THRUST, thrust));
+
+        // Physics Update
+        const force = thrust - (MASS * GRAVITY);
+        const acceleration = force / MASS;
+        
+        state.v += acceleration * DT;
+        state.y += state.v * DT;
+        
+        // Floor collision
+        if (state.y < 0) {
+            state.y = 0;
+            state.v = -state.v * 0.3; // Bounce with damping
+            if (Math.abs(state.v) < 0.1) state.v = 0;
+        }
+
+        state.time += DT;
+
+        // Update Stats
+        document.getElementById('stat-error').innerText = error.toFixed(2) + 'm';
+        document.getElementById('stat-thrust').innerText = ((thrust / MAX_THRUST) * 100).toFixed(0) + '%';
+
+        // Update History
+        history.push({
+            t: state.time,
+            y: state.y,
+            target: params.target
+        });
+        if (history.length > MAX_HISTORY) history.shift();
+    }
+
+    function drawDrone() {
+        // Clear
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Scale
+        // Map 0-100m to canvas height (with some padding)
+        const scaleY = (y) => canvas.height - (y / 120) * canvas.height - 20;
+
+        // Draw Ground
+        ctx.fillStyle = '#333';
+        ctx.fillRect(0, scaleY(0), canvas.width, 5);
+
+        // Draw Target Line
+        const targetY = scaleY(params.target);
+        ctx.beginPath();
+        ctx.strokeStyle = '#00ffcc'; // Cyan
+        ctx.setLineDash([5, 5]);
+        ctx.moveTo(0, targetY);
+        ctx.lineTo(canvas.width, targetY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#00ffcc';
+        ctx.fillText(`Target: ${params.target}m`, 5, targetY - 5);
+
+        // Draw Drone
+        const droneY = scaleY(state.y);
+        const droneX = canvas.width / 2;
+        
+        // Drone Body
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(droneX, droneY, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Propellers
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(droneX - 20, droneY);
+        ctx.lineTo(droneX + 20, droneY);
+        ctx.stroke();
+
+        // Thruster Fire (Visual only)
+        // Simple visual scaling based on error/thrust could be added here
+    }
+
+    function drawGraph() {
+        // Clear
+        graphCtx.fillStyle = '#1a1a1a';
+        graphCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
+        
+        if (history.length < 2) return;
+
+        // Scales
+        // Y-axis: 0 to 120m
+        // X-axis: latest 5 seconds (MAX_HISTORY frames)
+        
+        const mapY = (val) => graphCanvas.height - (val / 120) * graphCanvas.height;
+        const mapX = (i) => (i / (MAX_HISTORY - 1)) * graphCanvas.width;
+
+        // Draw Target Line (Green)
+        graphCtx.beginPath();
+        graphCtx.strokeStyle = 'rgba(0, 255, 204, 0.5)';
+        graphCtx.lineWidth = 2;
+        history.forEach((h, i) => {
+            if (i === 0) graphCtx.moveTo(mapX(i), mapY(h.target));
+            else graphCtx.lineTo(mapX(i), mapY(h.target));
+        });
+        graphCtx.stroke();
+
+        // Draw Actual Path (White)
+        graphCtx.beginPath();
+        graphCtx.strokeStyle = '#fff';
+        graphCtx.lineWidth = 2;
+        history.forEach((h, i) => {
+            if (i === 0) graphCtx.moveTo(mapX(i), mapY(h.y));
+            else graphCtx.lineTo(mapX(i), mapY(h.y));
+        });
+        graphCtx.stroke();
+    }
+
+    function loop() {
+        updatePhysics();
+        drawDrone();
+        drawGraph();
+        requestAnimationFrame(loop);
+    }
+
+    // Init
+    setupInputs();
+    loop();
+
+</script>
+
+<style>
+	.tool-container {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+	.tool-header {
+		text-align: center;
+		margin-bottom: 2rem;
+	}
+	.back-link {
+		color: #888;
+		text-decoration: none;
+		font-size: 0.9rem;
+		margin-bottom: 1rem;
+		display: inline-block;
+	}
+	.back-link:hover {
+		color: #fff;
+	}
+	.tool-header h1 {
+		font-size: 2.5rem;
+		margin: 0.5rem 0;
+        background: linear-gradient(45deg, #00ffcc, #3399ff);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+    
+    .sim-layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .glass-panel {
+        background: rgba(26, 26, 26, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .controls-panel h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1.5rem;
+        color: #00ffcc;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 0.5rem;
+    }
+
+    .control-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .control-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #ccc;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    input[type=range] {
+        width: 100%;
+        background: transparent;
+        -webkit-appearance: none;
+        cursor: pointer;
+    }
+    
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 6px;
+        background: #333;
+        border-radius: 3px;
+    }
+    
+    input[type=range]::-webkit-slider-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: #00ffcc;
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -5px;
+        transition: transform 0.1s;
+    }
+    
+    input[type=range]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+    }
+
+    .buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .action-btn {
+        background: linear-gradient(45deg, #00ffcc, #3399ff);
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    
+    .secondary-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .action-btn:hover, .secondary-btn:hover {
+        opacity: 0.9;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .stats {
+        margin-top: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        background: rgba(0,0,0,0.2);
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #888;
+    }
+    
+    .stat-value {
+        font-size: 1.1rem;
+        font-family: monospace;
+        color: #00ffcc;
+    }
+
+    .vis-panel {
+        display: flex;
+        gap: 1rem;
+        min-height: 400px;
+        justify-content: space-between;
+    }
+
+    .canvas-container, .graph-container {
+        position: relative;
+    }
+
+    canvas {
+        background: #111;
+        border-radius: 8px;
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    @media (max-width: 900px) {
+        .sim-layout {
+            grid-template-columns: 1fr;
+        }
+        .vis-panel {
+            flex-direction: column;
+        }
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+    }
+</style>

@@ -1,0 +1,223 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+// Import research data
+// In a real build, this would be fetched or imported. 
+// For now, we'll use a hardcoded fallback and try to fetch the local JSON if possible.
+let researchData = { papers: [] };
+try {
+  // Use import.meta.env.BASE_URL for absolute path resolution in Astro
+  const response = await fetch(`${import.meta.env.SITE || 'http://localhost:4321'}/data/research.json`).catch(() => null);
+  if (response && response.ok) {
+    researchData = await response.json();
+  } else {
+    // Fallback if fetch fails during build
+    researchData = {
+      papers: [
+        {
+          title: "SCALE: Self-Uncertainty for VLAs",
+          authors: "ArXiv:2602.04208",
+          date: "2026-02-09",
+          link: "https://arxiv.org/abs/2602.04208",
+          summary: "A lightweight inference strategy that uses 'self-uncertainty' to modulate perception and action in Vision-Language-Action (VLA) models without retraining.",
+          category: "VLA"
+        },
+        {
+          title: "SD-VLA: Efficient Long-Horizon Control",
+          authors: "ArXiv:2602.03983",
+          date: "2026-02-08",
+          link: "https://arxiv.org/abs/2602.03983",
+          summary: "Disentangles static and dynamic visual tokens to slash computational costs and improve long-horizon reasoning.",
+          category: "Efficiency"
+        },
+        {
+          title: "DreamDojo: A Generalist Robot World Model",
+          authors: "ArXiv:2602.06949",
+          date: "2026-02-06",
+          link: "https://arxiv.org/abs/2602.06949",
+          summary: "Introduces a foundation world model pretrained on 44k hours of egocentric human videos.",
+          category: "World Models"
+        }
+      ]
+    };
+  }
+} catch (e) {
+  console.error(e);
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Research Radar | ${SITE_TITLE}`} description="Latest robotics and AI research papers curated by Pi." />
+		<style>
+			main {
+				width: 100%;
+				max-width: 900px;
+				margin: 0 auto;
+				padding: 3rem 1.5rem;
+			}
+			.hero {
+				text-align: center;
+				margin-bottom: 4rem;
+			}
+			.hero h1 {
+				font-size: 3rem;
+				background: linear-gradient(45deg, #fff, var(--accent));
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				margin-bottom: 1rem;
+			}
+			.hero p {
+				color: rgba(255, 255, 255, 0.6);
+				font-size: 1.2rem;
+			}
+			
+			.paper-list {
+				display: flex;
+				flex-direction: column;
+				gap: 2rem;
+			}
+			
+			.paper-card {
+				background: var(--glass);
+				border: 1px solid var(--glass-border);
+				border-radius: 20px;
+				padding: 2rem;
+				transition: all 0.3s ease;
+				position: relative;
+				overflow: hidden;
+			}
+			
+			.paper-card:hover {
+				border-color: var(--accent);
+				box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+				transform: translateX(10px);
+			}
+			
+			.paper-card::before {
+				content: '';
+				position: absolute;
+				left: 0;
+				top: 0;
+				bottom: 0;
+				width: 4px;
+				background: var(--accent);
+				opacity: 0.3;
+			}
+			
+			.category-tag {
+				display: inline-block;
+				padding: 0.2rem 0.8rem;
+				background: rgba(0, 242, 255, 0.1);
+				color: var(--accent);
+				border-radius: 50px;
+				font-size: 0.7rem;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				margin-bottom: 1rem;
+				border: 1px solid rgba(0, 242, 255, 0.2);
+			}
+			
+			.paper-title {
+				font-size: 1.6rem;
+				color: #fff;
+				margin-bottom: 0.5rem;
+				line-height: 1.2;
+			}
+			
+			.paper-meta {
+				font-size: 0.9rem;
+				color: rgba(255, 255, 255, 0.4);
+				margin-bottom: 1.5rem;
+				display: flex;
+				gap: 1.5rem;
+			}
+			
+			.paper-summary {
+				color: rgba(255, 255, 255, 0.7);
+				line-height: 1.6;
+				margin-bottom: 1.5rem;
+			}
+			
+			.paper-link {
+				color: var(--accent);
+				text-decoration: none;
+				font-weight: 600;
+				font-size: 0.9rem;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+			
+			.paper-link:hover {
+				text-decoration: underline;
+			}
+			
+			.radar-status {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				justify-content: center;
+				margin-top: 1rem;
+				font-size: 0.8rem;
+				color: rgba(255, 255, 255, 0.3);
+			}
+			
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				background: #00ff00;
+				border-radius: 50%;
+				box-shadow: 0 0 10px #00ff00;
+				animation: pulse 2s infinite;
+			}
+			
+			@keyframes pulse {
+				0% { transform: scale(1); opacity: 1; }
+				50% { transform: scale(1.5); opacity: 0.5; }
+				100% { transform: scale(1); opacity: 1; }
+			}
+			
+			@media (max-width: 720px) {
+				.hero h1 { font-size: 2.2rem; }
+				.paper-card { padding: 1.5rem; }
+				.paper-title { font-size: 1.3rem; }
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="hero">
+				<h1>Research Radar</h1>
+				<p>Autonomous monitoring of Robotics & AI breakthroughs.</p>
+				<div class="radar-status">
+					<div class="status-dot"></div>
+					<span>Radar Active: Scanning cs.RO, cs.AI, cs.LG</span>
+				</div>
+			</div>
+			
+			<div class="paper-list">
+				{researchData.papers.map((paper) => (
+					<div class="paper-card">
+						<span class="category-tag">{paper.category}</span>
+						<h2 class="paper-title">{paper.title}</h2>
+						<div class="paper-meta">
+							<span>{paper.authors}</span>
+							<span>{paper.date}</span>
+						</div>
+						<p class="paper-summary">{paper.summary}</p>
+						<a href={paper.link} target="_blank" class="paper-link">
+							Read Full Paper →
+						</a>
+					</div>
+				))}
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>

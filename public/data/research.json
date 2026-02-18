@@ -1,0 +1,85 @@
+{
+  "lastUpdated": "2026-02-11T03:00:00Z",
+  "papers": [
+    {
+      "title": "Recurrent-Depth VLA: Test-Time Scaling",
+      "authors": "ArXiv:2602.07845v1",
+      "date": "2026-02-08",
+      "link": "https://arxiv.org/abs/2602.07845v1",
+      "summary": "Achieves computational adaptivity via latent iterative refinement, enabling constant memory usage and up to 80x inference speedup over prior reasoning-based VLAs.",
+      "category": "VLA/Efficiency"
+    },
+    {
+      "title": "SteerVLA: Steering VLAs in Long-Tail Driving",
+      "authors": "ArXiv:2602.08440v1",
+      "date": "2026-02-09",
+      "link": "https://arxiv.org/abs/2602.08440v1",
+      "summary": "Leverages VLM reasoning to produce fine-grained language instructions that steer a VLA driving policy, significantly improving performance in long-tail scenarios.",
+      "category": "VLA/Driving"
+    },
+    {
+      "title": "TwinRL-VLA: Digital Twin-Driven RL",
+      "authors": "ArXiv:2602.09023v1",
+      "date": "2026-02-09",
+      "link": "http://arxiv.org/abs/2602.09023v1",
+      "summary": "A collaborative RL framework using high-fidelity digital twins to scale exploration for VLA models, achieving near 100% success in out-of-distribution regions.",
+      "category": "RL/VLA"
+    },
+    {
+      "title": "Contact-Anchored Policies (CAP)",
+      "authors": "ArXiv:2602.09017v1",
+      "date": "2026-02-09",
+      "link": "http://arxiv.org/abs/2602.09017v1",
+      "summary": "Replaces language conditioning with physical contact points, outperforming state-of-the-art VLAs in zero-shot evaluations by 56%.",
+      "category": "Manipulation"
+    },
+    {
+      "title": "Chi-Zero: Resource-Aware Robust Manipulation",
+      "authors": "ArXiv:2602.09021v1",
+      "date": "2026-02-09",
+      "link": "http://arxiv.org/abs/2602.09021v1",
+      "summary": "A resource-efficient framework for high-reliability garment manipulation, capable of non-stop operation for 24 hours from arbitrary initial states.",
+      "category": "Manipulation"
+    },
+    {
+      "title": "From Obstacles to Etiquette",
+      "authors": "ArXiv:2602.09002v1",
+      "date": "2026-02-09",
+      "link": "http://arxiv.org/abs/2602.09002v1",
+      "summary": "Integrates geometric planning with fine-tuned VLM reasoning for social navigation, respecting human norms in complex environments.",
+      "category": "HRI"
+    },
+    {
+      "title": "MOSAIC: Whole-Body Humanoid Teleoperation",
+      "authors": "ArXiv:2602.08594v1",
+      "date": "2026-02-09",
+      "link": "http://arxiv.org/abs/2602.08594v1",
+      "summary": "Full-stack system for humanoid motion tracking and teleoperation using rapid residual adaptation to bridge the sim-to-real gap.",
+      "category": "Humanoid"
+    },
+    {
+      "title": "SCALE: Self-Uncertainty for VLAs",
+      "authors": "ArXiv:2602.04208",
+      "date": "2026-02-09",
+      "link": "https://arxiv.org/abs/2602.04208",
+      "summary": "A lightweight inference strategy using 'self-uncertainty' to modulate perception and action in VLA models without retraining.",
+      "category": "VLA"
+    },
+    {
+      "title": "SD-VLA: Efficient Long-Horizon Control",
+      "authors": "ArXiv:2602.03983",
+      "date": "2026-02-08",
+      "link": "https://arxiv.org/abs/2602.03983",
+      "summary": "Disentangles static and dynamic visual tokens to slash computational costs and improve long-horizon reasoning.",
+      "category": "Efficiency"
+    },
+    {
+      "title": "DreamDojo: Robot World Model",
+      "authors": "ArXiv:2602.06949",
+      "date": "2026-02-06",
+      "link": "https://arxiv.org/abs/2602.06949",
+      "summary": "A foundation world model pretrained on 44k hours of egocentric human videos, bridging the human-robot domain gap.",
+      "category": "World Models"
+    }
+  ]
+}

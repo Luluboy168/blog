@@ -19,7 +19,7 @@ const posts = (await getCollection('blog')).sort(
 		<style>
 			ul {
 				display: grid;
-				grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 				gap: 2rem;
 				list-style-type: none;
 				margin: 0;
@@ -59,7 +59,7 @@ const posts = (await getCollection('blog')).sort(
 			}
 			@media (max-width: 720px) {
 				ul {
-					grid-template-columns: 1fr;
+					gap: 1.5rem;
 				}
 				.post-content {
 					padding: 1.2rem;
@@ -102,13 +102,14 @@ const posts = (await getCollection('blog')).sort(
 		<Header />
 		<main>
 			<section>
+				<h1 class="sr-only">Archive</h1>
 				<ul>
 					{
 						posts.map((post) => (
 							<li>
 								<a href={`${import.meta.env.BASE_URL}/posts/${post.id}/`}>
 									{post.data.heroImage && (
-										<Image src={post.data.heroImage} alt={post.data.title} class="post-image" inferSize={true} />
+										<Image src={post.data.heroImage} alt={post.data.heroImageAlt || post.data.title} class="post-image" inferSize={true} />
 									)}
 									<div class="post-content">
 										<span class="date">

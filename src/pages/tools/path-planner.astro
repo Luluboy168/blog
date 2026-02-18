@@ -1,0 +1,649 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_TITLE } from '../../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Robotics Path Planner | ${SITE_TITLE}`} description="Interactive A* Path Planning Visualization." />
+        <style>
+            /* Custom Scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #1a1a1a;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #333;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+        </style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="tool-container">
+				<div class="tool-header">
+					<a href="/blog/tools" class="back-link">← Back to Tools</a>
+					<h1>Path Planner Visualizer</h1>
+					<p>Visualize A* search algorithm in real-time.</p>
+				</div>
+
+                <div class="planner-layout">
+                    <!-- Controls Panel -->
+                    <div class="glass-panel controls-panel">
+                        <h2>Controls</h2>
+                        
+                        <div class="control-group">
+                            <label for="algorithm">Algorithm</label>
+                            <select id="algorithm" class="control-select">
+                                <option value="astar">A* Search</option>
+                                <option value="dijkstra">Dijkstra</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="speed">Speed: <span id="val-speed">Fast</span></label>
+                            <input type="range" id="speed" min="1" max="50" step="1" value="25">
+                        </div>
+
+                         <div class="buttons">
+                            <button id="start-btn" class="action-btn">Start Search</button>
+                            <button id="reset-path-btn" class="secondary-btn">Clear Path</button>
+                            <button id="reset-walls-btn" class="secondary-btn">Clear Walls</button>
+                            <button id="random-btn" class="secondary-btn">Random Maze</button>
+                        </div>
+                        
+                        <div class="stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Visited</span>
+                                <span class="stat-value" id="stat-visited">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Path Len</span>
+                                <span class="stat-value" id="stat-path">0</span>
+                            </div>
+                        </div>
+
+                        <div class="legend">
+                            <h3>Legend</h3>
+                            <div class="legend-item"><span class="color-box start"></span> Start</div>
+                            <div class="legend-item"><span class="color-box end"></span> End</div>
+                            <div class="legend-item"><span class="color-box wall"></span> Wall</div>
+                            <div class="legend-item"><span class="color-box visited"></span> Visited</div>
+                            <div class="legend-item"><span class="color-box path"></span> Path</div>
+                        </div>
+                    </div>
+
+                    <!-- Visualization Panel -->
+                    <div class="glass-panel vis-panel">
+                        <div class="canvas-container">
+                            <canvas id="grid-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+    // Configuration
+    const COLS = 40;
+    const ROWS = 30;
+    const CELL_SIZE = 20;
+    const GAP = 1;
+
+    // Colors
+    const COLORS = {
+        bg: '#111',
+        grid: '#222',
+        wall: '#555',
+        start: '#00ffcc',
+        end: '#ff3366',
+        open: 'rgba(0, 200, 255, 0.3)',
+        closed: 'rgba(0, 100, 200, 0.2)',
+        path: '#ffd700',
+        current: '#fff'
+    };
+
+    // State
+    let grid = [];
+    let startNode = null;
+    let endNode = null;
+    let isRunning = false;
+    let isFinished = false;
+    let openSet = [];
+    let closedSet = [];
+    let path = [];
+    let currentDrag = null; // 'start', 'end', 'wall', 'erase'
+    let animationSpeed = 25; // Steps per frame
+
+    // Canvas
+    const canvas = document.getElementById('grid-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Resize
+    function resize() {
+        const container = document.querySelector('.canvas-container');
+        // Calculate size based on grid
+        const width = COLS * (CELL_SIZE + GAP) + GAP;
+        const height = ROWS * (CELL_SIZE + GAP) + GAP;
+        
+        canvas.width = width;
+        canvas.height = height;
+        draw();
+    }
+
+    // Node Class
+    class Node {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.isWall = false;
+            this.f = 0;
+            this.g = 0;
+            this.h = 0;
+            this.parent = null;
+        }
+
+        draw(ctx) {
+            const px = this.x * (CELL_SIZE + GAP) + GAP;
+            const py = this.y * (CELL_SIZE + GAP) + GAP;
+            
+            ctx.fillStyle = COLORS.bg; // Default
+            
+            if (this.isWall) ctx.fillStyle = COLORS.wall;
+            else if (this === startNode) ctx.fillStyle = COLORS.start;
+            else if (this === endNode) ctx.fillStyle = COLORS.end;
+            else if (path.includes(this)) ctx.fillStyle = COLORS.path;
+            else if (openSet.includes(this)) ctx.fillStyle = COLORS.open;
+            else if (closedSet.includes(this)) ctx.fillStyle = COLORS.closed;
+
+            ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+        }
+    }
+
+    // Initialization
+    function initGrid() {
+        grid = [];
+        for (let x = 0; x < COLS; x++) {
+            grid[x] = [];
+            for (let y = 0; y < ROWS; y++) {
+                grid[x][y] = new Node(x, y);
+            }
+        }
+
+        // Defaults
+        startNode = grid[5][15];
+        endNode = grid[34][15];
+    }
+
+    function resetPath() {
+        openSet = [];
+        closedSet = [];
+        path = [];
+        isFinished = false;
+        isRunning = false;
+        
+        // Reset node stats
+        for (let x = 0; x < COLS; x++) {
+            for (let y = 0; y < ROWS; y++) {
+                grid[x][y].f = 0;
+                grid[x][y].g = 0;
+                grid[x][y].h = 0;
+                grid[x][y].parent = null;
+            }
+        }
+        
+        draw();
+        updateStats();
+    }
+
+    function resetWalls() {
+        for (let x = 0; x < COLS; x++) {
+            for (let y = 0; y < ROWS; y++) {
+                grid[x][y].isWall = false;
+            }
+        }
+        draw();
+    }
+
+    function randomWalls() {
+        resetPath();
+        resetWalls();
+        for (let x = 0; x < COLS; x++) {
+            for (let y = 0; y < ROWS; y++) {
+                if (Math.random() < 0.3 && grid[x][y] !== startNode && grid[x][y] !== endNode) {
+                    grid[x][y].isWall = true;
+                }
+            }
+        }
+        draw();
+    }
+
+    // A* Algorithm
+    function heuristic(a, b) {
+        // Manhattan distance
+        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    }
+
+    function startSearch() {
+        if (isRunning) return;
+        resetPath();
+        
+        openSet = [startNode];
+        isRunning = true;
+        loop();
+    }
+
+    function step() {
+        if (openSet.length === 0) {
+            console.log("No solution");
+            isRunning = false;
+            isFinished = true;
+            return;
+        }
+
+        // Find lowest f in openSet
+        let lowestIndex = 0;
+        for (let i = 0; i < openSet.length; i++) {
+            if (openSet[i].f < openSet[lowestIndex].f) {
+                lowestIndex = i;
+            }
+        }
+
+        let current = openSet[lowestIndex];
+
+        if (current === endNode) {
+            // Done!
+            let temp = current;
+            path = [];
+            path.push(temp);
+            while (temp.parent) {
+                path.push(temp.parent);
+                temp = temp.parent;
+            }
+            isRunning = false;
+            isFinished = true;
+            console.log("DONE!");
+            return;
+        }
+
+        // Move current from open to closed
+        openSet.splice(lowestIndex, 1);
+        closedSet.push(current);
+
+        // Check neighbors
+        let neighbors = [];
+        const x = current.x;
+        const y = current.y;
+
+        if (x < COLS - 1) neighbors.push(grid[x + 1][y]);
+        if (x > 0) neighbors.push(grid[x - 1][y]);
+        if (y < ROWS - 1) neighbors.push(grid[x][y + 1]);
+        if (y > 0) neighbors.push(grid[x][y - 1]);
+
+        for (let neighbor of neighbors) {
+            if (closedSet.includes(neighbor) || neighbor.isWall) {
+                continue;
+            }
+
+            let tempG = current.g + 1;
+            let newPath = false;
+
+            if (openSet.includes(neighbor)) {
+                if (tempG < neighbor.g) {
+                    neighbor.g = tempG;
+                    newPath = true;
+                }
+            } else {
+                neighbor.g = tempG;
+                newPath = true;
+                openSet.push(neighbor);
+            }
+
+            if (newPath) {
+                neighbor.h = heuristic(neighbor, endNode);
+                neighbor.f = neighbor.g + neighbor.h;
+                neighbor.parent = current;
+            }
+        }
+    }
+
+    function loop() {
+        if (!isRunning) return;
+
+        // Perform multiple steps per frame for speed
+        for (let i = 0; i < animationSpeed; i++) {
+            if (!isRunning) break;
+            step();
+        }
+        
+        draw();
+        updateStats();
+
+        if (isRunning) {
+            requestAnimationFrame(loop);
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = COLORS.grid;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let x = 0; x < COLS; x++) {
+            for (let y = 0; y < ROWS; y++) {
+                grid[x][y].draw(ctx);
+            }
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('stat-visited').innerText = closedSet.length;
+        document.getElementById('stat-path').innerText = path.length;
+    }
+
+    // Input Handling
+    function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: Math.floor((evt.clientX - rect.left) / (CELL_SIZE + GAP)),
+            y: Math.floor((evt.clientY - rect.top) / (CELL_SIZE + GAP))
+        };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (isRunning) return;
+        
+        const pos = getMousePos(e);
+        if (pos.x < 0 || pos.x >= COLS || pos.y < 0 || pos.y >= ROWS) return;
+        
+        const node = grid[pos.x][pos.y];
+
+        if (node === startNode) {
+            currentDrag = 'start';
+        } else if (node === endNode) {
+            currentDrag = 'end';
+        } else if (node.isWall) {
+            currentDrag = 'erase';
+            node.isWall = false;
+        } else {
+            currentDrag = 'wall';
+            node.isWall = true;
+        }
+        draw();
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!currentDrag || isRunning) return;
+
+        const pos = getMousePos(e);
+        if (pos.x < 0 || pos.x >= COLS || pos.y < 0 || pos.y >= ROWS) return;
+        
+        const node = grid[pos.x][pos.y];
+
+        if (currentDrag === 'start') {
+            if (node !== endNode && !node.isWall) {
+                startNode = node;
+            }
+        } else if (currentDrag === 'end') {
+            if (node !== startNode && !node.isWall) {
+                endNode = node;
+            }
+        } else if (currentDrag === 'wall') {
+            if (node !== startNode && node !== endNode) {
+                node.isWall = true;
+            }
+        } else if (currentDrag === 'erase') {
+            if (node !== startNode && node !== endNode) {
+                node.isWall = false;
+            }
+        }
+        draw();
+    });
+
+    window.addEventListener('mouseup', () => {
+        currentDrag = null;
+    });
+
+    // UI Controls
+    document.getElementById('start-btn').addEventListener('click', startSearch);
+    document.getElementById('reset-path-btn').addEventListener('click', resetPath);
+    document.getElementById('reset-walls-btn').addEventListener('click', resetWalls);
+    document.getElementById('random-btn').addEventListener('click', randomWalls);
+    
+    document.getElementById('speed').addEventListener('input', (e) => {
+        animationSpeed = parseInt(e.target.value);
+        document.getElementById('val-speed').innerText = animationSpeed;
+    });
+
+    // Initialization
+    initGrid();
+    window.addEventListener('load', resize);
+    window.addEventListener('resize', resize);
+    setTimeout(resize, 100);
+
+</script>
+
+<style>
+	.tool-container {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+	.tool-header {
+		text-align: center;
+		margin-bottom: 2rem;
+	}
+	.back-link {
+		color: #888;
+		text-decoration: none;
+		font-size: 0.9rem;
+		margin-bottom: 1rem;
+		display: inline-block;
+	}
+	.back-link:hover {
+		color: #fff;
+	}
+	.tool-header h1 {
+		font-size: 2.5rem;
+		margin: 0.5rem 0;
+        background: linear-gradient(45deg, #00ffcc, #3399ff);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+    
+    .planner-layout {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .glass-panel {
+        background: rgba(26, 26, 26, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .controls-panel h2, .legend h3 {
+        font-size: 1.2rem;
+        margin-bottom: 1.5rem;
+        color: #00ffcc;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 0.5rem;
+    }
+
+    .control-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .control-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #ccc;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .control-select {
+        width: 100%;
+        padding: 8px;
+        background: #333;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 4px;
+    }
+
+    input[type=range] {
+        width: 100%;
+        background: transparent;
+        -webkit-appearance: none;
+        cursor: pointer;
+    }
+    
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 6px;
+        background: #333;
+        border-radius: 3px;
+    }
+    
+    input[type=range]::-webkit-slider-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: #00ffcc;
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -5px;
+        transition: transform 0.1s;
+    }
+    
+    input[type=range]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+    }
+
+    .buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .action-btn {
+        background: linear-gradient(45deg, #00ffcc, #3399ff);
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    
+    .secondary-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .action-btn:hover, .secondary-btn:hover {
+        opacity: 0.9;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .stats {
+        margin-top: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        background: rgba(0,0,0,0.2);
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #888;
+    }
+    
+    .stat-value {
+        font-size: 1.1rem;
+        font-family: monospace;
+        color: #00ffcc;
+    }
+    
+    .legend {
+        margin-top: 2rem;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: #ccc;
+    }
+    
+    .color-box {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        display: inline-block;
+    }
+    
+    .color-box.start { background: #00ffcc; }
+    .color-box.end { background: #ff3366; }
+    .color-box.wall { background: #555; }
+    .color-box.visited { background: rgba(0, 100, 200, 0.5); }
+    .color-box.path { background: #ffd700; }
+
+    .vis-panel {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #000;
+        min-height: 600px;
+        overflow: auto;
+    }
+
+    .canvas-container {
+        position: relative;
+    }
+
+    canvas {
+        display: block;
+        cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+        .planner-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

@@ -6,7 +6,7 @@ import HeaderLink from './HeaderLink.astro';
 <header>
 	<nav>
 		<h2><a href={`${import.meta.env.BASE_URL}/`}>{SITE_TITLE}</a></h2>
-		<button class="mobile-menu-toggle" aria-label="Menu">
+		<button class="mobile-menu-toggle" aria-label="Menu" aria-expanded="false">
 			<span></span>
 			<span></span>
 			<span></span>
@@ -14,6 +14,7 @@ import HeaderLink from './HeaderLink.astro';
 		<div class="internal-links">
 			<HeaderLink href={`${import.meta.env.BASE_URL}/`}>Home</HeaderLink>
 			<HeaderLink href={`${import.meta.env.BASE_URL}/archive/`}>Archive</HeaderLink>
+			<HeaderLink href={`${import.meta.env.BASE_URL}/research/`}>Research</HeaderLink>
 			<HeaderLink href={`${import.meta.env.BASE_URL}/games/`}>Games</HeaderLink>
 			<HeaderLink href={`${import.meta.env.BASE_URL}/tools/`}>Tools</HeaderLink>
 			<HeaderLink href={`${import.meta.env.BASE_URL}/about/`}>About</HeaderLink>
@@ -133,7 +134,9 @@ import HeaderLink from './HeaderLink.astro';
 	toggle?.addEventListener('click', () => {
 		toggle.classList.toggle('active');
 		links?.classList.toggle('active');
-		document.body.style.overflow = links?.classList.contains('active') ? 'hidden' : '';
+		const isExpanded = toggle.classList.contains('active');
+		toggle.setAttribute('aria-expanded', isExpanded.toString());
+		document.body.style.overflow = isExpanded ? 'hidden' : '';
 	});
 
 	// Close menu when a link is clicked
@@ -142,6 +145,7 @@ import HeaderLink from './HeaderLink.astro';
 		link.addEventListener('click', () => {
 			toggle?.classList.remove('active');
 			links?.classList.remove('active');
+			toggle?.setAttribute('aria-expanded', 'false');
 			document.body.style.overflow = '';
 		});
 	});
