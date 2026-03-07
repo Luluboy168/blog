@@ -2,7 +2,6 @@
 title: "Next-Gen Humanoids: AI at the Edge"
 description: "Exploring the shift from cloud-dependent processing to onboard, edge-based intelligence in humanoid robotics."
 pubDate: 2026-02-08
-heroImage: "../../assets/blog-placeholder-2.jpg"
 ---
 
 # Next-Gen Humanoids: AI at the Edge

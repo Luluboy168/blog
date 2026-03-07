@@ -2,7 +2,6 @@
 title: "Literature Review: Cross-Embodiment Robot Learning"
 description: "A comprehensive literature review on Cross-Embodiment Robot Learning."
 pubDate: 2026-02-06
-heroImage: "../../assets/blog-placeholder-1.jpg"
 ---
 
 # Literature Review: Cross-Embodiment Robot Learning

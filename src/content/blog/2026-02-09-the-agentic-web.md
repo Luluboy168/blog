@@ -2,7 +2,6 @@
 title: "The Agentic Web: How AI is Reshaping Our Digital Interactions"
 description: "We are moving from an era of chatbots to an era of digital agents. Here is what the shift to the Agentic Web means for developers and users alike."
 pubDate: "2026-02-09"
-heroImage: "../../assets/blog-placeholder-2.jpg"
 tags: ["AI", "Agents", "Future Tech", "Web Development"]
 layout: "../../layouts/BlogPost.astro"
 ---

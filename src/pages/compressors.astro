@@ -1,0 +1,561 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+
+const SITE_TITLE = "File Compressor - Compress Files Online Free";
+const SITE_DESCRIPTION = "Compress your files online for free. Fast, secure, and all compression happens in your browser. No upload required.";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<meta name="keywords" content="file compressor, compress files, online compressor, free compression, gzip, zip" />
+		<meta property="og:title" content="File Compressor - Compress Files Online Free" />
+		<meta property="og:description" content="Fast, secure, client-side file compression. No upload required." />
+		<meta property="og:type" content="website" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<link rel="canonical" href="https://compressors.luluboy168.com/" />
+		<style>
+			.compressor-page {
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 2rem;
+			}
+			.drop-zone {
+				border: 3px dashed #ccc;
+				border-radius: 12px;
+				padding: 3rem 2rem;
+				text-align: center;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				background: var(--card-bg, #f8f9fa);
+				margin-bottom: 1.5rem;
+			}
+			.drop-zone:hover, .drop-zone.dragover {
+				border-color: #0088cc;
+				background: #e8f4fc;
+			}
+			.drop-zone-icon {
+				font-size: 3rem;
+				margin-bottom: 1rem;
+			}
+			.drop-zone p {
+				margin: 0.5rem 0;
+				color: var(--text-muted, #666);
+		 }
+			.file-input {
+				display: none;
+			}
+			.file-list {
+				margin: 1.5rem 0;
+			}
+			.file-item {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 1rem;
+				background: var(--card-bg, #f8f9fa);
+				border-radius: 8px;
+				margin-bottom: 0.75rem;
+				gap: 1rem;
+			}
+			.file-info {
+				flex: 1;
+				min-width: 0;
+			}
+			.file-name {
+				font-weight: 600;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.file-size {
+				font-size: 0.875rem;
+				color: var(--text-muted, #666);
+			}
+			.file-size .compressed {
+				color: #22c55e;
+				font-weight: 600;
+			}
+			.compression-options {
+				display: flex;
+				gap: 1rem;
+				margin: 1.5rem 0;
+				flex-wrap: wrap;
+			}
+			.compression-options label {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				cursor: pointer;
+				padding: 0.5rem 1rem;
+				background: var(--card-bg, #f8f9fa);
+				border-radius: 6px;
+				transition: background 0.2s;
+			}
+			.compression-options label:hover {
+				background: #e8e8e8;
+			}
+			.btn {
+				padding: 0.75rem 1.5rem;
+				border: none;
+				border-radius: 8px;
+				font-size: 1rem;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.btn-primary {
+				background: linear-gradient(45deg, #0088cc, #00aaff);
+				color: white;
+			}
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+			}
+			.btn-primary:disabled {
+				opacity: 0.6;
+				cursor: not-allowed;
+				transform: none;
+			}
+			.btn-secondary {
+				background: #6c757d;
+				color: white;
+			}
+			.progress-bar {
+				width: 100%;
+				height: 8px;
+				background: #e9ecef;
+				border-radius: 4px;
+				overflow: hidden;
+				margin-top: 0.5rem;
+			}
+			.progress-fill {
+				height: 100%;
+				background: linear-gradient(45deg, #0088cc, #00aaff);
+				transition: width 0.3s ease;
+				width: 0%;
+			}
+			.status {
+				margin-top: 0.75rem;
+				font-size: 0.875rem;
+				color: var(--text-muted, #666);
+			}
+			.ad-space {
+				min-height: 100px;
+				background: #f0f0f0;
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #999;
+				margin: 2rem 0;
+				font-size: 0.875rem;
+			}
+			.features {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 1.5rem;
+				margin: 2rem 0;
+			}
+			.feature {
+				text-align: center;
+				padding: 1.5rem;
+				background: var(--card-bg, #f8f9fa);
+				border-radius: 12px;
+			}
+			.feature-icon {
+				font-size: 2rem;
+				margin-bottom: 0.5rem;
+			}
+			.feature h3 {
+				margin: 0.5rem 0;
+				font-size: 1.1rem;
+			}
+			.feature p {
+				margin: 0;
+				font-size: 0.9rem;
+				color: var(--text-muted, #666);
+			}
+			.download-link {
+				color: #0088cc;
+				font-weight: 600;
+				text-decoration: none;
+			}
+			.download-link:hover {
+				text-decoration: underline;
+			}
+			.remove-btn {
+				background: #dc3545;
+				color: white;
+				border: none;
+				padding: 0.4rem 0.8rem;
+				border-radius: 4px;
+				cursor: pointer;
+				font-size: 0.875rem;
+			}
+			@media (max-width: 600px) {
+				.compressor-page {
+					padding: 1rem;
+				}
+				.file-item {
+					flex-direction: column;
+					align-items: flex-start;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main class="compressor-page">
+			<section class="hero" style="text-align: center; margin-bottom: 2rem;">
+				<h1>File Compressor</h1>
+				<p style="font-size: 1.1rem; color: var(--text-muted, #666);">Compress your files directly in your browser. Fast, secure, and free.</p>
+			</section>
+
+			<!-- Ad Space -->
+			<div class="ad-space">
+				 Advertisement Space (728x90)
+			</div>
+
+			<div class="drop-zone" id="dropZone">
+				<div class="drop-zone-icon">📦</div>
+				<p><strong>Drop files here</strong> or click to browse</p>
+				<p style="font-size: 0.875rem;">Supports multiple files • Max 100MB per file</p>
+				<input type="file" id="fileInput" class="file-input" multiple />
+			</div>
+
+			<div class="compression-options">
+				<label>
+					<input type="radio" name="format" value="gzip" checked />
+					GZIP (.gz)
+				</label>
+				<label>
+					<input type="radio" name="format" value="deflate" />
+					Deflate (.deflate)
+				</label>
+				<label>
+					<input type="radio" name="format" value="zip" />
+					ZIP (.zip)
+				</label>
+			</div>
+
+			<div class="file-list" id="fileList"></div>
+
+			<div style="text-align: center; margin: 1.5rem 0;">
+				<button class="btn btn-primary" id="compressBtn" disabled>Compress Files</button>
+			</div>
+
+			<div class="features">
+				<div class="feature">
+					<div class="feature-icon">⚡</div>
+					<h3>Fast Compression</h3>
+					<p>All processing happens locally in your browser</p>
+				</div>
+				<div class="feature">
+					<div class="feature-icon">🔒</div>
+					<h3>Secure</h3>
+					<p>Your files never leave your device</p>
+				</div>
+				<div class="feature">
+					<div class="feature-icon">📱</div>
+					<h3>Free</h3>
+					<p>No registration or limits</p>
+				</div>
+			</div>
+
+			<!-- Ad Space -->
+			<div class="ad-space">
+				Advertisement Space (728x90)
+			</div>
+		</main>
+		<Footer />
+
+		<script>
+			const dropZone = document.getElementById('dropZone');
+			const fileInput = document.getElementById('fileInput');
+			const fileList = document.getElementById('fileList');
+			const compressBtn = document.getElementById('compressBtn');
+
+			let files = [];
+
+			// Drop zone events
+			dropZone.addEventListener('click', () => fileInput.click());
+			
+			dropZone.addEventListener('dragover', (e) => {
+				e.preventDefault();
+				dropZone.classList.add('dragover');
+			});
+			
+			dropZone.addEventListener('dragleave', () => {
+				dropZone.classList.remove('dragover');
+			});
+			
+			dropZone.addEventListener('drop', (e) => {
+				e.preventDefault();
+				dropZone.classList.remove('dragover');
+				handleFiles(e.dataTransfer.files);
+			});
+
+			fileInput.addEventListener('change', (e) => {
+				handleFiles(e.target.files);
+			});
+
+			function handleFiles(newFiles) {
+				for (const file of newFiles) {
+					if (file.size > 100 * 1024 * 1024) {
+						alert(`File ${file.name} is too large. Max 100MB.`);
+						continue;
+					}
+					files.push({
+						file,
+						id: Math.random().toString(36).substr(2, 9),
+						status: 'pending',
+						originalSize: file.size,
+						compressedSize: null,
+						compressedBlob: null
+					});
+				}
+				renderFileList();
+			}
+
+			function formatSize(bytes) {
+				if (bytes === 0) return '0 B';
+				const k = 1024;
+				const sizes = ['B', 'KB', 'MB', 'GB'];
+				const i = Math.floor(Math.log(bytes) / Math.log(k));
+				return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+			}
+
+			function renderFileList() {
+				if (files.length === 0) {
+					fileList.innerHTML = '';
+					compressBtn.disabled = true;
+					return;
+				}
+
+				compressBtn.disabled = files.every(f => f.status === 'done');
+
+				fileList.innerHTML = files.map(f => `
+					<div class="file-item" data-id="${f.id}">
+						<div class="file-info">
+							<div class="file-name">${f.file.name}</div>
+							<div class="file-size">
+								${formatSize(f.originalSize)}
+								${f.compressedSize ? `→ <span class="compressed">${formatSize(f.compressedSize)}</span> (${Math.round((1 - f.compressedSize / f.originalSize) * 100)}% saved)` : ''}
+							</div>
+							${f.status === 'compressing' ? `
+								<div class="progress-bar">
+									<div class="progress-fill" style="width: ${f.progress || 0}%"></div>
+								</div>
+							` : ''}
+							${f.status === 'done' ? `<div class="status"><a href="${URL.createObjectURL(f.compressedBlob)}" download="${f.file.name}.${getExtension()}" class="download-link">Download Compressed File</a></div>` : ''}
+						</div>
+						${f.status !== 'done' ? `<button class="remove-btn" onclick="removeFile('${f.id}')">Remove</button>` : ''}
+					</div>
+				`).join('');
+			}
+
+			function getExtension() {
+				const format = document.querySelector('input[name="format"]:checked').value;
+				if (format === 'zip') return 'zip';
+				if (format === 'gzip') return 'gz';
+				return 'deflate';
+			}
+
+			window.removeFile = function(id) {
+				files = files.filter(f => f.id !== id);
+				renderFileList();
+			};
+
+			// Simple ZIP implementation using inflateRaw/deflateRaw from pako
+			// We'll use built-in CompressionStream for gzip/deflate
+			async function compressGzip(data) {
+				const cs = new CompressionStream('gzip');
+				const writer = cs.writable.getWriter();
+				writer.write(data);
+				writer.close();
+				const result = await cs.readable.toArrayBuffer();
+				return result;
+			}
+
+			async function compressDeflate(data) {
+				const cs = new CompressionStream('deflate');
+				const writer = cs.writable.getWriter();
+				writer.write(data);
+				writer.close();
+				const result = await cs.readable.toArrayBuffer();
+				return result;
+			}
+
+			// Simple ZIP format implementation
+			async function createZip(files) {
+				const encoder = new TextEncoder();
+				const parts = [];
+				const centralDirectory = [];
+				let offset = 0;
+
+				// Local file headers and data
+				for (const f of files) {
+					const name = f.file.name;
+					const data = await f.file.arrayBuffer();
+					const compressed = await compressGzip(data);
+					
+					const localHeader = new Uint8Array(30 + name.length);
+					// Local file header
+					localHeader[0] = 0x50; localHeader[1] = 0x4b; localHeader[2] = 0x03; localHeader[3] = 0x04; // sig
+					localHeader[4] = 20; localHeader[5] = 0; // version needed
+					localHeader[6] = 0; localHeader[7] = 0; // general purpose bit flag
+					localHeader[8] = 8; localHeader[9] = 0; // compression method (deflate)
+					localHeader[10] = 0; localHeader[11] = 0; // mod time
+					localHeader[12] = 0; localHeader[13] = 0; // mod date
+					// CRC32 would go here - using placeholder
+					localHeader[14] = 0; localHeader[15] = 0; localHeader[16] = 0; localHeader[17] = 0;
+					// Compressed size
+					localHeader[18] = compressed.byteLength & 0xff;
+					localHeader[19] = (compressed.byteLength >> 8) & 0xff;
+					localHeader[20] = (compressed.byteLength >> 16) & 0xff;
+					localHeader[21] = (compressed.byteLength >> 24) & 0xff;
+					// Uncompressed size
+					localHeader[22] = data.byteLength & 0xff;
+					localHeader[23] = (data.byteLength >> 8) & 0xff;
+					localHeader[24] = (data.byteLength >> 16) & 0xff;
+					localHeader[25] = (data.byteLength >> 24) & 0xff;
+					// File name length
+					localHeader[26] = name.length & 0xff;
+					localHeader[27] = (name.length >> 8) & 0xff;
+					// Extra field length
+					localHeader[28] = 0; localHeader[29] = 0;
+					
+					// File name
+					const nameBytes = encoder.encode(name);
+					for (let i = 0; i < nameBytes.length; i++) {
+						localHeader[30 + i] = nameBytes[i];
+					}
+
+					parts.push(localHeader);
+					parts.push(new Uint8Array(compressed));
+
+					// Central directory entry
+					const centralEntry = new Uint8Array(46 + name.length);
+					centralEntry[0] = 0x50; centralEntry[1] = 0x4b; centralEntry[2] = 0x01; centralEntry[3] = 0x02; // sig
+					centralEntry[4] = 20; centralEntry[5] = 0; // version made by
+					centralEntry[6] = 20; centralEntry[7] = 0; // version needed
+					centralEntry[8] = 0; centralEntry[9] = 0; // flags
+					centralEntry[10] = 8; centralEntry[11] = 0; // compression
+					centralEntry[12] = 0; centralEntry[13] = 0; // mod time
+					centralEntry[14] = 0; centralEntry[15] = 0; // mod date
+					centralEntry[16] = 0; centralEntry[17] = 0; centralEntry[18] = 0; centralEntry[19] = 0; // CRC
+					centralEntry[20] = compressed.byteLength & 0xff;
+					centralEntry[21] = (compressed.byteLength >> 8) & 0xff;
+					centralEntry[22] = (compressed.byteLength >> 16) & 0xff;
+					centralEntry[23] = (compressed.byteLength >> 24) & 0xff;
+					centralEntry[24] = data.byteLength & 0xff;
+					centralEntry[25] = (data.byteLength >> 8) & 0xff;
+					centralEntry[26] = (data.byteLength >> 16) & 0xff;
+					centralEntry[27] = (data.byteLength >> 24) & 0xff;
+					centralEntry[28] = name.length & 0xff;
+					centralEntry[29] = (name.length >> 8) & 0xff;
+					centralEntry[30] = 0; centralEntry[31] = 0; // extra
+					centralEntry[32] = 0; centralEntry[33] = 0; // comment
+					centralEntry[34] = 0; centralEntry[35] = 0; // disk
+					centralEntry[36] = 0; centralEntry[37] = 0; // internal attrs
+					centralEntry[38] = 0; centralEntry[39] = 0; centralEntry[40] = 0; centralEntry[41] = 0; // external attrs
+					centralEntry[42] = offset & 0xff;
+					centralEntry[43] = (offset >> 8) & 0xff;
+					centralEntry[44] = (offset >> 16) & 0xff;
+					centralEntry[45] = (offset >> 24) & 0xff;
+
+					for (let i = 0; i < nameBytes.length; i++) {
+						centralEntry[46 + i] = nameBytes[i];
+					}
+
+					centralDirectory.push(centralEntry);
+					offset += localHeader.length + compressed.byteLength;
+				}
+
+				const centralOffset = offset;
+				const centralDirectoryData = centralDirectory.reduce((a, b) => {
+					const res = new Uint8Array(a.length + b.length);
+					res.set(a);
+					res.set(b, a.length);
+					return res;
+				}, new Uint8Array(0));
+
+				// End of central directory
+				const endOfCentral = new Uint8Array(22);
+				endOfCentral[0] = 0x50; endOfCentral[1] = 0x4b; endOfCentral[2] = 0x05; endOfCentral[3] = 0x06;
+				endOfCentral[4] = 0; endOfCentral[5] = 0;
+				endOfCentral[6] = 0; endOfCentral[7] = 0;
+				endOfCentral[8] = files.length & 0xff;
+				endOfCentral[9] = (files.length >> 8) & 0xff;
+				endOfCentral[10] = files.length & 0xff;
+				endOfCentral[11] = (files.length >> 8) & 0xff;
+				endOfCentral[12] = centralDirectoryData.length & 0xff;
+				endOfCentral[13] = (centralDirectoryData.length >> 8) & 0xff;
+				endOfCentral[14] = (centralDirectoryData.length >> 16) & 0xff;
+				endOfCentral[15] = (centralDirectoryData.length >> 24) & 0xff;
+				endOfCentral[16] = centralOffset & 0xff;
+				endOfCentral[17] = (centralOffset >> 8) & 0xff;
+				endOfCentral[18] = (centralOffset >> 16) & 0xff;
+				endOfCentral[19] = (centralOffset >> 24) & 0xff;
+
+				// Combine all parts
+				const allParts = [...parts, centralDirectoryData, endOfCentral];
+				const totalLength = allParts.reduce((a, b) => a + b.length, 0);
+				const result = new Uint8Array(totalLength);
+				let pos = 0;
+				for (const part of allParts) {
+					result.set(part, pos);
+					pos += part.length;
+				}
+
+				return result.buffer;
+			}
+
+			compressBtn.addEventListener('click', async () => {
+				const format = document.querySelector('input[name="format"]:checked').value;
+				compressBtn.disabled = true;
+				compressBtn.textContent = 'Compressing...';
+
+				for (let i = 0; i < files.length; i++) {
+					if (files[i].status === 'done') continue;
+					
+					files[i].status = 'compressing';
+					files[i].progress = 0;
+					renderFileList();
+
+					try {
+						const data = await files[i].file.arrayBuffer();
+						let compressed;
+
+						if (format === 'gzip') {
+							compressed = await compressGzip(data);
+						} else if (format === 'deflate') {
+							compressed = await compressDeflate(data);
+						} else if (format === 'zip') {
+							compressed = await createZip([files[i]]);
+						}
+
+						files[i].compressedSize = compressed.byteLength;
+						files[i].compressedBlob = new Blob([compressed], { 
+							type: format === 'zip' ? 'application/zip' : 'application/octet-stream' 
+						});
+						files[i].status = 'done';
+					} catch (err) {
+						console.error('Compression error:', err);
+						alert(`Error compressing ${files[i].file.name}: ${err.message}`);
+						files[i].status = 'error';
+					}
+
+					renderFileList();
+				}
+
+				compressBtn.textContent = 'Compress Files';
+				compressBtn.disabled = false;
+			});
+		</script>
+	</body>
+</html>

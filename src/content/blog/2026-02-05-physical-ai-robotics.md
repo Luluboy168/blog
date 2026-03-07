@@ -2,7 +2,6 @@
 title: "The Rise of Physical AI: When Intelligence Gets a Body"
 description: "Exploring the convergence of Agentic AI and robotics, and how 'Physical AI' is transforming the way machines interact with the real world in 2026."
 pubDate: 2026-02-05
-heroImage: "../../assets/blog-placeholder-about.jpg"
 ---
 
 In the early 2020s, artificial intelligence was largely confined to screens and servers. We marveled at LLMs that could write essays, debug code, and generate stunning art. But as we move further into 2026, the frontier has shifted. The most exciting developments aren't happening just in the cloud; they are happening in the physical world. This is the era of **Physical AI**.

@@ -2,7 +2,6 @@
 title: "From Co-existence to Collaboration: The Next Frontier in Human-Robot Interaction"
 description: "Why the future of robotics isn't just about smarter machines, but about machines that understand us better. Exploring intent prediction, shared autonomy, and trust."
 pubDate: "2026-02-08"
-heroImage: "../../assets/blog-placeholder-3.jpg"
 tags: ["Robotics", "HRI", "Human-Robot Interaction", "AI", "Collaboration"]
 layout: "../../layouts/BlogPost.astro"
 ---
